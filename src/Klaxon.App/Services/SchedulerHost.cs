@@ -11,11 +11,8 @@ using Microsoft.Win32;
 
 namespace Klaxon.App.Services;
 
-/// <summary>
-/// Connects the scheduler to the real world: the one-second tick and the Windows
-/// power/time events. | Liga o agendador ao mundo real: o tique de um segundo e os eventos de energia
-/// e de relógio do Windows.
-/// </summary>
+/// <summary>Connects the scheduler to the real world: the one-second tick and the Windows power/time
+/// events.</summary>
 public sealed class SchedulerHost(
     IAlarmScheduler scheduler,
     AlarmsService alarms,
@@ -37,7 +34,7 @@ public sealed class SchedulerHost(
     private bool _hooked;
     private string? _ultimoStatus;
 
-    /// <summary>Loads alarms, starts the tick, and hooks system events. | Carrega alarmes, inicia o tique e engancha os eventos do sistema.</summary>
+    /// <summary>Loads alarms, starts the tick, and hooks system events.</summary>
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _scheduler.Triggered += OnTriggered;
@@ -46,13 +43,12 @@ public sealed class SchedulerHost(
         _alarms.Changed += OnAlarmsChanged;
         _scheduler.Reload(_alarms.Items);
 
-        // Restore snoozes/escalations after Reload (which needs the alarms loaded),
-        // then persist on every later change. | Restaura adiamentos/escaladas após o Reload (que precisa dos alarmes carregados)
-        // e, a partir daí, persiste a cada mudança.
+        // Restore snoozes/escalations after Reload (which needs the alarms loaded), then persist on every later
+        // change.
         _scheduler.RestoreState(_stateStore.Load());
         _scheduler.StateChanged += OnStateChanged;
 
-        // One-second tick: cheap, and immune to hibernation. | Tique de um segundo: barato, e imune a hibernação.
+        // One-second tick: cheap, and immune to hibernation.
         _timer = new DispatcherTimer(DispatcherPriority.Normal, Application.Current.Dispatcher)
         {
             Interval = TimeSpan.FromSeconds(1),
@@ -78,7 +74,7 @@ public sealed class SchedulerHost(
         return Task.CompletedTask;
     }
 
-    /// <summary>Stops the tick and unhooks system events. | Para o tique e desengancha os eventos do sistema.</summary>
+    /// <summary>Stops the tick and unhooks system events.</summary>
     public Task StopAsync(CancellationToken cancellationToken)
     {
         _timer?.Stop();
@@ -86,20 +82,20 @@ public sealed class SchedulerHost(
         return Task.CompletedTask;
     }
 
-    /// <summary>Reloads the scheduler when the alarm set changes. | Recarrega o agendador quando o conjunto de alarmes muda.</summary>
+    /// <summary>Reloads the scheduler when the alarm set changes.</summary>
     private void OnAlarmsChanged(object? sender, EventArgs e)
     {
         _scheduler.Reload(_alarms.Items);
         AtualizarStatusDaBandeja();
     }
 
-    /// <summary>Shows the alert for a fired alarm. | Mostra o alerta de um alarme disparado.</summary>
+    /// <summary>Shows the alert for a fired alarm.</summary>
     private void OnTriggered(object? sender, AlarmTriggeredEventArgs e)
     {
         _presenter.Show(e);
     }
 
-    /// <summary>Persists the scheduler state; a disk error must not crash the app. | Persiste o estado do agendador; um erro de disco não pode derrubar o app.</summary>
+    /// <summary>Persists the scheduler state; a disk error must not crash the app.</summary>
     private void OnStateChanged(object? sender, EventArgs e)
     {
         try
@@ -112,7 +108,7 @@ public sealed class SchedulerHost(
         }
     }
 
-    /// <summary>Updates the tray tooltip only when the text actually changes. | Atualiza o tooltip da bandeja só quando o texto muda de verdade.</summary>
+    /// <summary>Updates the tray tooltip only when the text actually changes.</summary>
     private void AtualizarStatusDaBandeja()
     {
         var proxima = _scheduler.NextFireTime;
@@ -130,7 +126,7 @@ public sealed class SchedulerHost(
         _tray.SetStatus(texto);
     }
 
-    /// <summary>On resume, ticks so catch-up runs for what came due while asleep. | Ao acordar, tica para o catch-up rodar sobre o que venceu dormindo.</summary>
+    /// <summary>On resume, ticks so catch-up runs for what came due while asleep.</summary>
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
     {
         if (e.Mode != PowerModes.Resume)
@@ -143,7 +139,7 @@ public sealed class SchedulerHost(
         Application.Current.Dispatcher.BeginInvoke(() => _scheduler.Tick());
     }
 
-    /// <summary>On a clock/zone change, reloads instead of firing a burst. | Numa mudança de relógio/fuso, recarrega em vez de disparar em rajada.</summary>
+    /// <summary>On a clock/zone change, reloads instead of firing a burst.</summary>
     private void OnTimeChanged(object? sender, EventArgs e)
     {
         _log.LogWarning("Relógio ou fuso do sistema mudou. Recalculando a agenda.");
@@ -151,7 +147,7 @@ public sealed class SchedulerHost(
         Application.Current.Dispatcher.BeginInvoke(() => _scheduler.Reload(_alarms.Items));
     }
 
-    /// <summary>Unsubscribes from the static SystemEvents and service events. | Desinscreve dos SystemEvents estáticos e dos eventos do serviço.</summary>
+    /// <summary>Unsubscribes from the static SystemEvents and service events.</summary>
     private void Unhook()
     {
         if (!_hooked)

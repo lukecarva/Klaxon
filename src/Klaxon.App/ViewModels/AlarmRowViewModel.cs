@@ -7,13 +7,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Klaxon.App.ViewModels;
 
-/// <summary>One row of the alarm list. | Uma linha da lista de alarmes.</summary>
+/// <summary>One row of the alarm list.</summary>
 public sealed partial class AlarmRowViewModel : ObservableObject
 {
     private readonly ISystemClock _clock;
     private readonly Action<bool> _onToggled;
 
-    // Guards the toggle callback during the initial load of IsEnabled. | Protege o callback do toggle durante a carga inicial de IsEnabled.
+    // Guards the toggle callback during the initial load of IsEnabled.
     private readonly bool _suprimirCallback;
 
     public AlarmRowViewModel(Alarm alarm, ISystemClock clock, Action<bool> onToggled)
@@ -30,22 +30,22 @@ public sealed partial class AlarmRowViewModel : ObservableObject
                       ?? Brushes.Gray;
     }
 
-    /// <summary>The underlying alarm. | O alarme por trás da linha.</summary>
+    /// <summary>The underlying alarm.</summary>
     public Alarm Alarm { get; }
 
-    /// <summary>Alarm title. | Título do alarme.</summary>
+    /// <summary>Alarm title.</summary>
     public string Title => Alarm.Title;
 
-    /// <summary>Schedule description. | Descrição da agenda.</summary>
+    /// <summary>Schedule description.</summary>
     public string ScheduleText => Alarm.Schedule.Describe();
 
-    /// <summary>Localized urgency name. | Nome localizado da urgência.</summary>
+    /// <summary>Localized urgency name.</summary>
     public string UrgencyName => Loc.UrgencyName(Alarm.Urgency);
 
-    /// <summary>Color of the urgency accent. | Cor de destaque da urgência.</summary>
+    /// <summary>Color of the urgency accent.</summary>
     public Brush AccentBrush { get; }
 
-    /// <summary>Whether the alarm is enabled. | Se o alarme está ligado.</summary>
+    /// <summary>Whether the alarm is enabled.</summary>
     [ObservableProperty]
     private bool _isEnabled;
 
@@ -57,7 +57,7 @@ public sealed partial class AlarmRowViewModel : ObservableObject
         }
     }
 
-    /// <summary>Relative text of the next occurrence, or off/none. | Texto relativo da próxima ocorrência, ou desligado/nenhuma.</summary>
+    /// <summary>Relative text of the next occurrence, or off/none.</summary>
     public string NextText
     {
         get
@@ -75,6 +75,6 @@ public sealed partial class AlarmRowViewModel : ObservableObject
         }
     }
 
-    /// <summary>Re-reads the relative texts without recreating the row. | Recalcula os textos relativos sem recriar a linha.</summary>
+    /// <summary>Re-reads the relative texts without recreating the row.</summary>
     public void RefreshNext() => OnPropertyChanged(nameof(NextText));
 }

@@ -9,7 +9,7 @@ public class IntervalScheduleTests
     private static DateTimeOffset Em(int ano, int mes, int dia, int hora, int min, int offsetHoras) =>
         new(ano, mes, dia, hora, min, 0, TimeSpan.FromHours(offsetHoras));
 
-    // ---------- No time range | Sem faixa de horário ----------
+    // ---------- No time range
 
     [Fact]
     public void Sem_faixa_dispara_a_cada_intervalo_a_partir_da_ancora()
@@ -25,7 +25,7 @@ public class IntervalScheduleTests
     [Fact]
     public void Mantem_o_ritmo_mesmo_consultando_no_meio_de_um_ciclo()
     {
-        // Asking mid-cycle at 10:00 returns the original grid point (10:30). | Consultar no meio do ciclo às 10:00 retorna o ponto do ciclo original (10:30).
+        // Asking mid-cycle at 10:00 returns the original grid point (10:30).
         var ancora = Em(2026, 6, 10, 9, 0, -3);
         var agenda = new IntervalSchedule(TimeSpan.FromMinutes(45), ancora);
 
@@ -53,7 +53,7 @@ public class IntervalScheduleTests
         Assert.Null(agenda.NextOccurrenceAfter(Em(2026, 6, 10, 9, 0, -3), Dst));
     }
 
-    // ---------- Time range | Faixa de horário ----------
+    // ---------- Time range
 
     [Fact]
     public void Antes_da_abertura_espera_a_faixa_comecar()
@@ -73,7 +73,7 @@ public class IntervalScheduleTests
     [Fact]
     public void Depois_do_fechamento_pula_para_a_abertura_do_dia_seguinte()
     {
-        // The reminder should not fire at 3am. | O lembrete não deve tocar às 3 da manhã.
+        // The reminder should not fire at 3am.
         var ancora = Em(2026, 6, 10, 9, 0, -3);
         var agenda = new IntervalSchedule(
             TimeSpan.FromMinutes(45),
@@ -96,7 +96,7 @@ public class IntervalScheduleTests
             new TimeOnly(9, 0),
             new TimeOnly(18, 0));
 
-        // 18:00 sharp is already out; the last firing of the day is 17:00. | 18:00 em ponto já está fora; o último disparo do dia é 17:00.
+        // 18:00 sharp is already out; the last firing of the day is 17:00.
         var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 10, 17, 0, -3), Dst);
 
         Assert.Equal(Em(2026, 6, 11, 9, 0, -3), proxima);
@@ -132,12 +132,12 @@ public class IntervalScheduleTests
         Assert.Equal(Em(2026, 6, 11, 22, 0, -3), proxima);
     }
 
-    // ---------- DST | Horário de verão ----------
+    // ---------- DST
 
     [Fact]
     public void Intervalo_e_duracao_absoluta_e_nao_se_desloca_no_horario_de_verao()
     {
-        // "Every 1 hour" is 60 real minutes; the wall clock reads 01:00 because it jumped. | "A cada 1 hora" são 60 minutos reais; o relógio de parede marca 01:00 porque pulou.
+        // "Every 1 hour" is 60 real minutes; the wall clock reads 01:00 because it jumped.
         var ancora = Em(2026, 10, 14, 23, 0, -3);
         var agenda = new IntervalSchedule(TimeSpan.FromHours(1), ancora);
 
@@ -150,7 +150,7 @@ public class IntervalScheduleTests
         Assert.Equal(TimeSpan.FromHours(-2), parede.Offset);
     }
 
-    // ---------- Describe | Descrição ----------
+    // ---------- Describe
 
     [Theory]
     [InlineData(45, "A cada 45 min")]

@@ -9,32 +9,32 @@ public enum AppLanguage
     Portuguese,
 }
 
-/// <summary>App localization in two languages, backed by in-code dictionaries. | Localização do app em dois idiomas, baseada em dicionários no código.</summary>
+/// <summary>App localization in two languages, backed by in-code dictionaries.</summary>
 public static class Loc
 {
-    /// <summary>Current language; neutral/fallback is English. | Idioma atual; neutro/fallback é inglês.</summary>
+    /// <summary>Current language; neutral/fallback is English.</summary>
     public static AppLanguage Language { get; private set; } = AppLanguage.English;
 
-    /// <summary>Culture for formatting dates and numbers. | Cultura para formatar datas e números.</summary>
+    /// <summary>Culture for formatting dates and numbers.</summary>
     public static CultureInfo Culture { get; private set; } = CultureInfo.GetCultureInfo("en-US");
 
-    /// <summary>Sets the current language and culture. | Define o idioma e a cultura atuais.</summary>
+    /// <summary>Sets the current language and culture.</summary>
     public static void Set(AppLanguage language)
     {
         Language = language;
         Culture = CultureInfo.GetCultureInfo(language == AppLanguage.Portuguese ? "pt-BR" : "en-US");
     }
 
-    /// <summary>Maps a saved code ("pt-BR", "en"…) to a language. | Mapeia um código salvo ("pt-BR", "en"…) para um idioma.</summary>
+    /// <summary>Maps a saved code ("pt-BR", "en"…) to a language.</summary>
     public static AppLanguage Parse(string? code) =>
         code?.StartsWith("pt", StringComparison.OrdinalIgnoreCase) == true
             ? AppLanguage.Portuguese
             : AppLanguage.English;
 
-    /// <summary>Code of the current language ("pt-BR" or "en"). | Código do idioma atual ("pt-BR" ou "en").</summary>
+    /// <summary>Code of the current language ("pt-BR" or "en").</summary>
     public static string Code => Language == AppLanguage.Portuguese ? "pt-BR" : "en";
 
-    /// <summary>Looks up a string, falling back to English then the key. | Busca uma string, caindo para inglês e por fim a chave.</summary>
+    /// <summary>Looks up a string, falling back to English then the key.</summary>
     public static string Get(string key)
     {
         var table = Language == AppLanguage.Portuguese ? Pt : En;
@@ -46,11 +46,11 @@ public static class Loc
         return En.TryGetValue(key, out var fallback) ? fallback : key;
     }
 
-    /// <summary>Looks up a string and formats it with the current culture. | Busca uma string e a formata com a cultura atual.</summary>
+    /// <summary>Looks up a string and formats it with the current culture.</summary>
     public static string Format(string key, params object[] args) =>
         string.Format(Culture, Get(key), args);
 
-    /// <summary>Localized name of an urgency level. | Nome localizado de um nível de urgência.</summary>
+    /// <summary>Localized name of an urgency level.</summary>
     public static string UrgencyName(UrgencyLevel level) => Get($"Urgency_{level}");
 
     private static readonly Dictionary<string, string> En = new(StringComparer.Ordinal)

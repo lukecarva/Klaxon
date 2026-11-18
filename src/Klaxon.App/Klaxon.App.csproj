@@ -19,52 +19,49 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <!-- Só para System.Windows.Forms.Screen: enumerar monitores e áreas de
-         trabalho. Escrever isso à mão com EnumDisplayMonitors seria muito mais
-         código para o mesmo resultado. -->
+    <!-- Only for System.Windows.Forms.Screen: enumerating monitors and working
+         areas. Doing it by hand with EnumDisplayMonitors would be far more code
+         for the same result. -->
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>Klaxon</AssemblyName>
     <RootNamespace>Klaxon.App</RootNamespace>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <!-- Per-monitor DPI awareness (PerMonitorV2) for sharp alerts on mixed-scale
-         multi-monitor setups. | Reconhecimento de DPI por monitor (PerMonitorV2)
-         para alertas nítidos em multi-monitor com escalas diferentes. -->
+         multi-monitor setups. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <!-- WFAC010 pede configurar DPI pela API do WinForms; este é um app WPF que só
-         usa WinForms para enumerar telas (sem loop de mensagens), então o manifesto
-         é o único mecanismo que vale. | WFAC010 asks to set DPI via the WinForms API;
-         this is a WPF app that uses WinForms only to enumerate screens (no message
-         loop), so the manifest is the mechanism that actually applies. -->
+    <!-- WFAC010 asks to set DPI via the WinForms API; this is a WPF app that uses
+         WinForms only to enumerate screens (no message loop), so the manifest is
+         the mechanism that actually applies. -->
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
     <Version>0.2.0</Version>
   </PropertyGroup>
 
-  <!-- Ajustes de peso em execução. Um utilitário de bandeja quer o menor
-       working set possível, não vazão máxima. -->
+  <!-- Runtime footprint tuning. A tray utility wants the smallest possible
+       working set, not maximum throughput. -->
   <PropertyGroup>
-    <!-- GC de estação, não de servidor: um heap só, sem uma thread de GC por
-         núcleo. Para um app pequeno e sempre aberto, é bem menos memória. -->
+    <!-- Workstation GC, not server: a single heap, without one GC thread per
+         core. For a small, always-open app it uses far less memory. -->
     <ServerGarbageCollection>false</ServerGarbageCollection>
-    <!-- Sem GC concorrente: dispensa a thread de background e o heap extra que
-         ela reserva. As pausas de GC são irrelevantes num despertador. -->
+    <!-- No concurrent GC: drops the background thread and the extra heap it
+         reserves. GC pauses are irrelevant in an alarm clock. -->
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
-    <!-- Devolve memória ao SO em vez de segurar para reuso — troca um pouco de
-         velocidade de realocação por um working set menor em repouso. -->
+    <!-- Return memory to the OS instead of holding it for reuse — trades a little
+         reallocation speed for a smaller working set at rest. -->
     <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Precisa ser Resource (e não só ApplicationIcon) para o pack:// URI do
-         ícone da bandeja resolver em tempo de execução. -->
+    <!-- Must be a Resource (not just ApplicationIcon) so the tray icon's pack://
+         URI resolves at runtime. -->
     <Resource Include="Assets\app.ico" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- UseWindowsForms joga System.Windows.Forms nos implicit usings, e aí
-         Application, MessageBox e afins ficam ambíguos com os do WPF. Os poucos
-         tipos do WinForms que usamos (Screen) são qualificados na mão. -->
+    <!-- UseWindowsForms adds System.Windows.Forms to the implicit usings, which
+         makes Application, MessageBox and friends ambiguous with the WPF ones. The
+         few WinForms types we use (Screen) are qualified by hand. -->
     <Using Remove="System.Windows.Forms" />
-    <!-- Mesmo motivo: System.Drawing.Brush/Color/Point colidem com os do WPF. -->
+    <!-- Same reason: System.Drawing.Brush/Color/Point collide with the WPF ones. -->
     <Using Remove="System.Drawing" />
   </ItemGroup>
 

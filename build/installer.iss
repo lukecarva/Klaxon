@@ -1,6 +1,6 @@
-; Instalador do Klaxon — Inno Setup. Bilíngue (EN/PT-BR).
-; Instalação por usuário (sem admin): cai em %LOCALAPPDATA%\Programs.
-; Compile com: iscc build\installer.iss  (a partir da raiz do repositório)
+; Klaxon installer — Inno Setup. Bilingual (EN/PT-BR).
+; Per-user install (no admin): lands in %LOCALAPPDATA%\Programs.
+; Compile with: iscc build\installer.iss  (from the repository root)
 
 #define AppFolder "Klaxon"
 #define AppVersion "0.2.0"
@@ -8,38 +8,38 @@
 #define AppExe "Klaxon.exe"
 
 [Setup]
-; AppId identifica o produto entre versões — nunca mudar depois de publicado,
-; senão uma atualização instala lado a lado em vez de por cima.
+; AppId identifies the product across versions — never change it once published,
+; otherwise an update installs side by side instead of over the top.
 AppId={{7B3C9E1A-4D52-4C8B-9E2F-1A6D5F0B7C34}
 AppName={cm:AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 VersionInfoVersion={#AppVersion}
-; Explícitos porque AppName usa constantes (senão o compilador só avisa).
+; Explicit because AppName uses constants (otherwise the compiler only warns).
 VersionInfoProductName={#AppFolder}
 VersionInfoDescription={#AppFolder} Setup
 
-; Sem admin: instala só para o usuário atual, em %LOCALAPPDATA%\Programs. O nome
-; da PASTA é fixo (marca), independente do idioma, para não criar duas pastas.
+; No admin: installs for the current user only, in %LOCALAPPDATA%\Programs. The
+; FOLDER name is fixed (brand), language-independent, to avoid creating two folders.
 PrivilegesRequired=lowest
 DefaultDirName={autopf}\{#AppFolder}
 DisableProgramGroupPage=yes
 DisableDirPage=auto
 
-; Saída
+; Output
 OutputDir=dist
 OutputBaseFilename=Klaxon-Setup-{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 
-; Aparência e identidade
+; Appearance and identity
 WizardStyle=modern
 SetupIconFile=..\src\Klaxon.App\Assets\app.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={cm:AppName}
 
-; Dois idiomas: o assistente mostra o seletor de idioma no início. English
-; primeiro = padrão. A escolha também define o idioma inicial do app (ver [Code]).
+; Two languages: the wizard shows the language selector up front. English first =
+; default. The choice also sets the app's initial language (see [Code]).
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
@@ -61,8 +61,8 @@ Name: "desktopicon"; Description: "{cm:TaskDesktop}"; Flags: unchecked
 Name: "startup"; Description: "{cm:TaskStartup}"; Flags: unchecked
 
 [Files]
-; O publish é um único .exe enxuto que usa o .NET 8 Desktop Runtime da máquina
-; (a presença dele é checada em InitializeSetup, abaixo).
+; The publish is a single lean .exe that uses the machine's .NET 8 Desktop Runtime
+; (its presence is checked in InitializeSetup, below).
 Source: "publish\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
@@ -70,8 +70,8 @@ Name: "{autoprograms}\{cm:AppName}"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\{cm:AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Registry]
-; Início automático opcional. Mesmo nome e formato que o app usa no próprio
-; botão "Iniciar com o Windows", então os dois não brigam — e sai na desinstalação.
+; Optional autostart. Same name and format the app uses for its own "Start with
+; Windows" button, so the two do not conflict — and it is removed on uninstall.
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
     ValueType: string; ValueName: "Klaxon"; \
     ValueData: """{app}\{#AppExe}"" --minimized"; \
@@ -82,19 +82,19 @@ Filename: "{app}\{#AppExe}"; Description: "{cm:RunApp}"; \
     Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-; Fecha o app antes de remover, senão o .exe fica travado.
-Filename: "{cmd}"; Parameters: "/C taskkill /IM {#AppExe} /F"; Flags: runhidden; RunOnceId: "FecharApp"
+; Close the app before removing, otherwise the .exe stays locked.
+Filename: "{cmd}"; Parameters: "/C taskkill /IM {#AppExe} /F"; Flags: runhidden; RunOnceId: "CloseApp"
 
 [UninstallDelete]
-; Remove a pasta do produto (o exe já sai sozinho); dados do usuário em
-; %APPDATA%\Klaxon são preservados de propósito.
+; Remove the product folder (the exe leaves on its own); user data in
+; %APPDATA%\Klaxon is preserved on purpose.
 Type: dirifempty; Name: "{app}"
 
 [Code]
-{ O build é framework-dependent: sem o .NET 8 Desktop Runtime o app não abre.
-  Checamos antes de instalar e avisamos com o link, em vez de deixar o usuário
-  esbarrar num erro seco ao dar duplo-clique depois. }
-function Net8DesktopInstalado(): Boolean;
+{ The build is framework-dependent: without the .NET 8 Desktop Runtime the app
+  will not start. We check before installing and point to the download link, rather
+  than letting the user hit a blunt error on a later double-click. }
+function Net8DesktopInstalled(): Boolean;
 var
   Base: String;
   Rec: TFindRec;
@@ -121,31 +121,31 @@ end;
 function InitializeSetup(): Boolean;
 begin
   Result := True;
-  if Net8DesktopInstalado() then
+  if Net8DesktopInstalled() then
     exit;
 
-  { Pergunta em vez de bloquear: se a detecção falhar num caso de borda, o
-    usuário ainda consegue seguir por conta própria. }
+  { Ask instead of blocking: if detection fails in an edge case, the user can
+    still proceed on their own. }
   Result := MsgBox(ExpandConstant('{cm:RuntimeMissing}'), mbConfirmation, MB_YESNO) = IDYES;
 end;
 
-{ Grava a escolha de idioma do assistente em settings.json, para o app já abrir
-  no mesmo idioma. Hoje settings.json só guarda o idioma, então reescrevê-lo
-  inteiro é seguro. }
+{ Writes the wizard's language choice to settings.json, so the app opens in the
+  same language. Today settings.json only stores the language, so rewriting it
+  whole is safe. }
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  Pasta, Arquivo, Codigo: String;
+  Folder, FilePath, LangCode: String;
 begin
   if CurStep <> ssPostInstall then
     exit;
 
   if ActiveLanguage() = 'brazilianportuguese' then
-    Codigo := 'pt-BR'
+    LangCode := 'pt-BR'
   else
-    Codigo := 'en';
+    LangCode := 'en';
 
-  Pasta := ExpandConstant('{userappdata}\Klaxon');
-  ForceDirectories(Pasta);
-  Arquivo := Pasta + '\settings.json';
-  SaveStringToFile(Arquivo, '{' + #13#10 + '  "Language": "' + Codigo + '"' + #13#10 + '}' + #13#10, False);
+  Folder := ExpandConstant('{userappdata}\Klaxon');
+  ForceDirectories(Folder);
+  FilePath := Folder + '\settings.json';
+  SaveStringToFile(FilePath, '{' + #13#10 + '  "Language": "' + LangCode + '"' + #13#10 + '}' + #13#10, False);
 end;

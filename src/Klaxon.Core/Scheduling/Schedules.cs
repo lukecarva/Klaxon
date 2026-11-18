@@ -2,14 +2,14 @@ using Klaxon.Core.Localization;
 
 namespace Klaxon.Core.Scheduling;
 
-/// <summary>A single firing at an absolute instant. | Um disparo único num instante absoluto.</summary>
+/// <summary>A single firing at an absolute instant.</summary>
 public sealed record OneTimeSchedule(DateTimeOffset At) : ISchedule
 {
-    /// <summary>The instant itself, if still in the future. | O próprio instante, se ainda no futuro.</summary>
+    /// <summary>The instant itself, if still in the future.</summary>
     public DateTimeOffset? NextOccurrenceAfter(DateTimeOffset from, TimeZoneInfo zone) =>
         At > from ? At : null;
 
-    /// <summary>Localized date and time. | Data e hora localizadas.</summary>
+    /// <summary>Localized date and time.</summary>
     public string Describe()
     {
         var local = At.ToLocalTime();
@@ -19,15 +19,15 @@ public sealed record OneTimeSchedule(DateTimeOffset At) : ISchedule
     }
 }
 
-/// <summary>Every day at the same wall-clock time. | Todo dia na mesma hora de parede.</summary>
+/// <summary>Every day at the same wall-clock time.</summary>
 public sealed record DailySchedule(TimeOnly At) : ISchedule
 {
-    /// <summary>Next occurrence at the set time. | Próxima ocorrência no horário definido.</summary>
+    /// <summary>Next occurrence at the set time.</summary>
     public DateTimeOffset? NextOccurrenceAfter(DateTimeOffset from, TimeZoneInfo zone)
     {
         var date = WallClock.LocalDate(from, zone);
 
-        // Extra days of slack: on a DST turn the same-day candidate may shift back. | Dias de folga extras: numa virada de DST o candidato de hoje pode recuar.
+        // Extra days of slack: on a DST turn the same-day candidate may shift back.
         for (var offset = 0; offset <= 2; offset++)
         {
             var candidate = WallClock.Resolve(date.AddDays(offset).ToDateTime(At), zone);
@@ -40,14 +40,14 @@ public sealed record DailySchedule(TimeOnly At) : ISchedule
         return null;
     }
 
-    /// <summary>Localized text. | Texto localizado.</summary>
+    /// <summary>Localized text.</summary>
     public string Describe() => Loc.Format("Sched_EveryDay", At.ToString("HH\\:mm", Loc.Culture));
 }
 
-/// <summary>On chosen weekdays, at the same wall-clock time. | Nos dias da semana escolhidos, na mesma hora de parede.</summary>
+/// <summary>On chosen weekdays, at the same wall-clock time.</summary>
 public sealed record WeeklySchedule(WeekDays Days, TimeOnly At) : ISchedule
 {
-    /// <summary>Next occurrence on an enabled weekday. | Próxima ocorrência num dia da semana ativado.</summary>
+    /// <summary>Next occurrence on an enabled weekday.</summary>
     public DateTimeOffset? NextOccurrenceAfter(DateTimeOffset from, TimeZoneInfo zone)
     {
         if (Days == WeekDays.None)
@@ -57,7 +57,7 @@ public sealed record WeeklySchedule(WeekDays Days, TimeOnly At) : ISchedule
 
         var date = WallClock.LocalDate(from, zone);
 
-        // Eight days cover the whole week even when today's slot has passed. | Oito dias cobrem a semana inteira mesmo quando o horário de hoje já passou.
+        // Eight days cover the whole week even when today's slot has passed.
         for (var offset = 0; offset <= 8; offset++)
         {
             var day = date.AddDays(offset);
@@ -76,7 +76,7 @@ public sealed record WeeklySchedule(WeekDays Days, TimeOnly At) : ISchedule
         return null;
     }
 
-    /// <summary>Localized text (special-cases weekdays/weekend/every day). | Texto localizado (trata dias úteis/fim de semana/todo dia à parte).</summary>
+    /// <summary>Localized text (special-cases weekdays/weekend/every day).</summary>
     public string Describe()
     {
         var hora = At.ToString("HH\\:mm", Loc.Culture);

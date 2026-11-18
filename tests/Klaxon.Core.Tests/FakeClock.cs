@@ -2,14 +2,14 @@ using Klaxon.Core.Abstractions;
 
 namespace Klaxon.Core.Tests;
 
-/// <summary>Test-controlled clock, to simulate the passage of time. | Relógio controlado pelos testes, para simular a passagem do tempo.</summary>
+/// <summary>Test-controlled clock, to simulate the passage of time.</summary>
 public sealed class FakeClock(DateTimeOffset start, TimeZoneInfo? zone = null) : ISystemClock
 {
     public DateTimeOffset Now { get; private set; } = start;
 
     public TimeZoneInfo LocalTimeZone { get; } = zone ?? TimeZoneInfo.Utc;
 
-    /// <summary>Advances the clock forward. | Avança o relógio para a frente.</summary>
+    /// <summary>Advances the clock forward.</summary>
     public void Advance(TimeSpan by)
     {
         if (by < TimeSpan.Zero)
@@ -20,6 +20,6 @@ public sealed class FakeClock(DateTimeOffset start, TimeZoneInfo? zone = null) :
         Now += by;
     }
 
-    /// <summary>Jumps to an arbitrary instant, even backwards. | Salta para um instante arbitrário, inclusive para trás.</summary>
+    /// <summary>Jumps to an arbitrary instant, even backwards.</summary>
     public void SetTo(DateTimeOffset instant) => Now = instant;
 }

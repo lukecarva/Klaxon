@@ -9,7 +9,7 @@ namespace Klaxon.App.Tests;
 
 public class MainViewModelHabitTests
 {
-    // Match habits by emoji, which is language independent. | Casa os hábitos pelo emoji, que independe de idioma.
+    // Match habits by emoji, which is language independent.
     private static readonly string WaterEmoji = HabitCatalog.Find("water")!.Emoji;
 
     private static (MainViewModel Vm, AlarmsService Alarms) Build()

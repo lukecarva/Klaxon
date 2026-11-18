@@ -3,7 +3,7 @@ using Klaxon.Core.Abstractions;
 
 namespace Klaxon.App.Services;
 
-/// <summary>Idle time from the last keyboard/mouse input, via GetLastInputInfo. | Tempo ocioso desde a última entrada de teclado/mouse, via GetLastInputInfo.</summary>
+/// <summary>Idle time from the last keyboard/mouse input, via GetLastInputInfo.</summary>
 public sealed class Win32IdleDetector : IIdleDetector
 {
     [StructLayout(LayoutKind.Sequential)]
@@ -17,7 +17,7 @@ public sealed class Win32IdleDetector : IIdleDetector
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetLastInputInfo(ref LastInputInfo info);
 
-    /// <summary>Time since the last input; assumes present if the call fails. | Tempo desde a última entrada; assume presença se a chamada falhar.</summary>
+    /// <summary>Time since the last input; assumes present if the call fails.</summary>
     public TimeSpan IdleFor
     {
         get
@@ -29,7 +29,7 @@ public sealed class Win32IdleDetector : IIdleDetector
                 return TimeSpan.Zero;
             }
 
-            // uint subtraction stays correct across the 32-bit tick wraparound. | A subtração em uint continua correta na virada de 32 bits do contador.
+            // uint subtraction stays correct across the 32-bit tick wraparound.
             var agora = (uint)Environment.TickCount;
             var decorrido = agora - info.dwTime;
 

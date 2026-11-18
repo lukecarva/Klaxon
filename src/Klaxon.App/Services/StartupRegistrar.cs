@@ -4,7 +4,7 @@ using Microsoft.Win32;
 
 namespace Klaxon.App.Services;
 
-/// <summary>Registers/unregisters "start with Windows" under HKCU (no admin). | Registra/remove o "iniciar com o Windows" em HKCU (sem admin).</summary>
+/// <summary>Registers/unregisters "start with Windows" under HKCU (no admin).</summary>
 public sealed class StartupRegistrar(ILogger<StartupRegistrar> log)
 {
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
@@ -12,7 +12,7 @@ public sealed class StartupRegistrar(ILogger<StartupRegistrar> log)
 
     private readonly ILogger<StartupRegistrar> _log = log;
 
-    /// <summary>Whether start-with-Windows is currently set. | Se o início com o Windows está ativo.</summary>
+    /// <summary>Whether start-with-Windows is currently set.</summary>
     public bool IsEnabled
     {
         get
@@ -22,7 +22,7 @@ public sealed class StartupRegistrar(ILogger<StartupRegistrar> log)
         }
     }
 
-    /// <summary>Turns start-with-Windows on or off. | Liga ou desliga o início com o Windows.</summary>
+    /// <summary>Turns start-with-Windows on or off.</summary>
     public void SetEnabled(bool enabled)
     {
         using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
@@ -41,7 +41,7 @@ public sealed class StartupRegistrar(ILogger<StartupRegistrar> log)
                 return;
             }
 
-            // --minimized: start straight to the tray. | --minimized: sobe direto para a bandeja.
+            // --minimized: start straight to the tray.
             key.SetValue(ValueName, $"\"{caminho}\" --minimized");
             _log.LogInformation("Início automático ligado.");
         }
@@ -52,7 +52,7 @@ public sealed class StartupRegistrar(ILogger<StartupRegistrar> log)
         }
     }
 
-    /// <summary>Path of the running executable. | Caminho do executável em execução.</summary>
+    /// <summary>Path of the running executable.</summary>
     private static string? ExecutablePath() =>
         Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
 }

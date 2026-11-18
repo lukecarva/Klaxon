@@ -4,7 +4,7 @@ using System.Windows.Data;
 
 namespace Klaxon.App.Views;
 
-/// <summary>Collapses when the value is null or an empty string. | Some quando o valor é nulo ou string vazia.</summary>
+/// <summary>Collapses when the value is null or an empty string.</summary>
 public sealed class NullToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -17,7 +17,7 @@ public sealed class NullToVisibilityConverter : IValueConverter
         throw new NotSupportedException();
 }
 
-/// <summary>Inverts a boolean. | Inverte um booleano.</summary>
+/// <summary>Inverts a boolean.</summary>
 public sealed class InverseBooleanConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>

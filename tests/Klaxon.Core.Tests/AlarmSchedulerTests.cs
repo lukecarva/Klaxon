@@ -8,7 +8,7 @@ public class AlarmSchedulerTests
     private static DateTimeOffset Utc(int ano, int mes, int dia, int hora, int min = 0) =>
         new(ano, mes, dia, hora, min, 0, TimeSpan.Zero);
 
-    /// <summary>Builds a scheduler and captures its triggers, with a fake clock. | Monta um agendador e captura seus disparos, com relógio falso.</summary>
+    /// <summary>Builds a scheduler and captures its triggers, with a fake clock.</summary>
     private static (AlarmScheduler Scheduler, FakeClock Clock, List<AlarmTriggeredEventArgs> Disparos) Montar(
         DateTimeOffset inicio,
         params Alarm[] alarmes)
@@ -70,7 +70,7 @@ public class AlarmSchedulerTests
         var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
         var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
 
-        // Ten minutes without a tick (a stall or long GC). | Dez minutos sem tique (uma travada ou GC longo).
+        // Ten minutes without a tick (a stall or long GC).
         clock.Advance(TimeSpan.FromMinutes(70));
         scheduler.Tick();
 
@@ -84,7 +84,7 @@ public class AlarmSchedulerTests
         var alarme = Alarm.New("Remédio", new DailySchedule(new TimeOnly(7, 0)));
         var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
 
-        // Slept at 6am, woke at 10am; the 7am alarm must not look on-time. | Dormiu às 6h, acordou às 10h; o alarme das 7h não pode parecer na hora.
+        // Slept at 6am, woke at 10am; the 7am alarm must not look on-time.
         clock.Advance(TimeSpan.FromHours(4));
         scheduler.Tick();
 
@@ -139,7 +139,7 @@ public class AlarmSchedulerTests
         var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
         var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
 
-        // The user set the system clock ten days back. | O usuário ajustou o relógio do sistema dez dias para trás.
+        // The user set the system clock ten days back.
         clock.SetTo(Utc(2026, 5, 31, 6, 0));
         scheduler.Tick();
 
@@ -160,7 +160,7 @@ public class AlarmSchedulerTests
         Assert.Null(scheduler.NextFireTime);
     }
 
-    // ---------- Snooze | Adiamento ----------
+    // ---------- Snooze
 
     [Fact]
     public void Adiar_reapresenta_o_alarme_depois_do_prazo()
@@ -219,7 +219,7 @@ public class AlarmSchedulerTests
         Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(2), out _));
         Assert.Equal(1, scheduler.SnoozeCountFor(alarme.Id));
 
-        // Next day: the snooze limit is per occurrence, not forever. | Dia seguinte: o limite de adiamentos é por ocorrência, não para sempre.
+        // Next day: the snooze limit is per occurrence, not forever.
         clock.SetTo(Utc(2026, 6, 11, 7, 0));
         scheduler.Tick();
 

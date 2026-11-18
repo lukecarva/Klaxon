@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Klaxon.App.ViewModels;
 
-/// <summary>View model of the main window: alarms list and daily habits. | View model da janela principal: lista de alarmes e hábitos do dia a dia.</summary>
+/// <summary>View model of the main window: alarms list and daily habits.</summary>
 public sealed partial class MainViewModel : ObservableObject
 {
     private readonly AlarmsService _alarms;
@@ -46,12 +46,12 @@ public sealed partial class MainViewModel : ObservableObject
         _alarms.Changed += (_, _) => Rebuild();
         Rebuild();
 
-        // Refreshes the relative texts periodically; only runs while visible. | Atualiza os textos relativos periodicamente; só roda enquanto visível.
+        // Refreshes the relative texts periodically; only runs while visible.
         _refresh = new DispatcherTimer { Interval = TimeSpan.FromSeconds(20) };
         _refresh.Tick += (_, _) => RefreshRelativeTexts();
     }
 
-    /// <summary>Starts/stops the periodic refresh with the window's visibility. | Liga/desliga a atualização periódica conforme a visibilidade da janela.</summary>
+    /// <summary>Starts/stops the periodic refresh with the window's visibility.</summary>
     public void SetActive(bool active)
     {
         if (active)
@@ -65,29 +65,29 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>User alarms (habits excluded). | Alarmes do usuário (hábitos excluídos).</summary>
+    /// <summary>User alarms (habits excluded).</summary>
     public ObservableCollection<AlarmRowViewModel> Alarms { get; } = [];
 
-    /// <summary>Daily-habit reminders. | Lembretes de dia a dia.</summary>
+    /// <summary>Daily-habit reminders.</summary>
     public ObservableCollection<HabitRowViewModel> Habits { get; } = [];
 
-    /// <summary>Footer version text. | Texto de versão do rodapé.</summary>
+    /// <summary>Footer version text.</summary>
     public string VersionText { get; }
 
-    /// <summary>Whether there are any user alarms. | Se há algum alarme do usuário.</summary>
+    /// <summary>Whether there are any user alarms.</summary>
     public bool HasAlarms => Alarms.Count > 0;
 
-    /// <summary>Subtitle summarizing the next alarm. | Subtítulo resumindo o próximo alarme.</summary>
+    /// <summary>Subtitle summarizing the next alarm.</summary>
     [ObservableProperty]
     private string _nextAlarmSummary = string.Empty;
 
-    /// <summary>Whether the app starts with Windows. | Se o app inicia com o Windows.</summary>
+    /// <summary>Whether the app starts with Windows.</summary>
     [ObservableProperty]
     private bool _startWithWindows;
 
     partial void OnStartWithWindowsChanged(bool value) => _startup.SetEnabled(value);
 
-    /// <summary>Opens the editor to create an alarm. | Abre o editor para criar um alarme.</summary>
+    /// <summary>Opens the editor to create an alarm.</summary>
     [RelayCommand]
     private void NewAlarm()
     {
@@ -100,7 +100,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Opens the editor for an existing alarm. | Abre o editor para um alarme existente.</summary>
+    /// <summary>Opens the editor for an existing alarm.</summary>
     [RelayCommand]
     private void Edit(AlarmRowViewModel? row)
     {
@@ -116,7 +116,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Deletes an alarm after confirmation. | Exclui um alarme após confirmação.</summary>
+    /// <summary>Deletes an alarm after confirmation.</summary>
     [RelayCommand]
     private void Delete(AlarmRowViewModel? row)
     {
@@ -128,12 +128,12 @@ public sealed partial class MainViewModel : ObservableObject
         _alarms.Remove(row.Alarm.Id);
     }
 
-    /// <summary>Rebuilds the alarm and habit rows from the service state. | Reconstrói as linhas de alarme e de hábito a partir do estado do serviço.</summary>
+    /// <summary>Rebuilds the alarm and habit rows from the service state.</summary>
     private void Rebuild()
     {
         Alarms.Clear();
 
-        // The alarm list hides habits; they live in the "daily" tab. | A lista de alarmes esconde os hábitos; eles ficam na aba "dia a dia".
+        // The alarm list hides habits; they live in the "daily" tab.
         var comuns = _alarms.Items
             .Where(a => a.HabitKey is null)
             .OrderBy(a => a.Title, StringComparer.CurrentCultureIgnoreCase);
@@ -150,7 +150,7 @@ public sealed partial class MainViewModel : ObservableObject
         RefreshRelativeTexts();
     }
 
-    /// <summary>Rebuilds the habit rows from the catalog and saved state. | Reconstrói as linhas de hábito a partir do catálogo e do estado salvo.</summary>
+    /// <summary>Rebuilds the habit rows from the catalog and saved state.</summary>
     private void RebuildHabits()
     {
         Habits.Clear();
@@ -162,7 +162,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Creates or removes a habit's alarm when toggled. | Cria ou remove o alarme de um hábito ao ligar/desligar.</summary>
+    /// <summary>Creates or removes a habit's alarm when toggled.</summary>
     private void ToggleHabit(HabitDefinition def, bool active, int minutes)
     {
         var existente = _alarms.Items.FirstOrDefault(a => a.HabitKey == def.Key);
@@ -179,7 +179,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Updates an active habit's interval. | Atualiza o intervalo de um hábito ativo.</summary>
+    /// <summary>Updates an active habit's interval.</summary>
     private void SetHabitInterval(HabitDefinition def, int minutes)
     {
         var existente = _alarms.Items.FirstOrDefault(a => a.HabitKey == def.Key);
@@ -189,7 +189,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Refreshes every relative text and the subtitle. | Atualiza todos os textos relativos e o subtítulo.</summary>
+    /// <summary>Refreshes every relative text and the subtitle.</summary>
     private void RefreshRelativeTexts()
     {
         foreach (var linha in Alarms)
@@ -200,7 +200,7 @@ public sealed partial class MainViewModel : ObservableObject
         NextAlarmSummary = DescribeNext();
     }
 
-    /// <summary>Builds the "next alarm …" subtitle. | Monta o subtítulo "próximo alarme …".</summary>
+    /// <summary>Builds the "next alarm …" subtitle.</summary>
     private string DescribeNext()
     {
         var proxima = _scheduler.NextFireTime;

@@ -1,16 +1,16 @@
 namespace Klaxon.Core.Abstractions;
 
-/// <summary>Provides the current time to the domain. | Fornece o horário atual ao domínio.</summary>
+/// <summary>Provides the current time to the domain.</summary>
 public interface ISystemClock
 {
-    /// <summary>Current instant, with local offset. | Instante atual, com o offset local.</summary>
+    /// <summary>Current instant, with local offset.</summary>
     DateTimeOffset Now { get; }
 
-    /// <summary>Local time zone. | Fuso horário local.</summary>
+    /// <summary>Local time zone.</summary>
     TimeZoneInfo LocalTimeZone { get; }
 }
 
-/// <summary>System clock backed by Windows. | Relógio do sistema, ligado ao Windows.</summary>
+/// <summary>System clock backed by Windows.</summary>
 public sealed class SystemClock : ISystemClock
 {
     public DateTimeOffset Now => DateTimeOffset.Now;

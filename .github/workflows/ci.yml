@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    # windows-latest é obrigatório: Klaxon.App tem TFM net8.0-windows (WPF).
+    # windows-latest is required: Klaxon.App targets net8.0-windows (WPF).
     runs-on: windows-latest
 
     steps:

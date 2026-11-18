@@ -7,17 +7,17 @@ namespace Klaxon.App.Tests;
 
 public class AlarmEditorViewModelTests
 {
-    // Fixed English-language clock at 2026-06-10 09:00 UTC. | Relógio fixo em inglês, 10/06/2026 09:00 UTC.
+    // Fixed English-language clock at 2026-06-10 09:00 UTC.
     private static FixedClock Clock() => new(new DateTimeOffset(2026, 6, 10, 9, 0, 0, TimeSpan.Zero));
 
     private static AlarmEditorViewModel New(FixedClock clock, Alarm? existing = null)
     {
-        // Tests assert on structure/behavior, not on message language. | Os testes verificam estrutura/comportamento, não o idioma das mensagens.
+        // Tests assert on structure/behavior, not on message language.
         Loc.Set(AppLanguage.English);
         return new AlarmEditorViewModel(clock, existing);
     }
 
-    /// <summary>Runs Save and returns the built alarm, or a validation error. | Roda Save e retorna o alarme montado, ou o erro de validação.</summary>
+    /// <summary>Runs Save and returns the built alarm, or a validation error.</summary>
     private static (Alarm? Result, string? Error) Save(AlarmEditorViewModel vm)
     {
         string? erro = null;

@@ -3,14 +3,11 @@ using Klaxon.Core.Localization;
 
 namespace Klaxon.App;
 
-/// <summary>Formats relative dates/times in the current language. | Formata datas/horas relativas no idioma atual.</summary>
+/// <summary>Formats relative dates/times in the current language.</summary>
 public static class TimeFormat
 {
-    /// <summary>
-    /// Describes a future instant relative to now: "in 42 min", "today, 07:00",
-    /// "tomorrow, …", or the short date (with the year when in another year). | Descreve um instante futuro em relação a agora: "em 42 min", "hoje, 07:00",
-    /// "amanhã, …", ou a data curta (com o ano quando for de outro ano).
-    /// </summary>
+    /// <summary>Describes a future instant relative to now: "in 42 min", "today, 07:00", "tomorrow, …", or the
+    /// short date (with the year when in another year).</summary>
     public static string Relative(DateTimeOffset when, ISystemClock clock)
     {
         var agora = clock.Now;

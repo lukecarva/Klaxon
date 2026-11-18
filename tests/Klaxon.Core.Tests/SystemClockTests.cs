@@ -2,7 +2,7 @@ using Klaxon.Core.Abstractions;
 
 namespace Klaxon.Core.Tests;
 
-/// <summary>Smoke tests for the time abstraction. | Testes de fumaça da abstração de tempo.</summary>
+/// <summary>Smoke tests for the time abstraction.</summary>
 public class SystemClockTests
 {
     [Fact]

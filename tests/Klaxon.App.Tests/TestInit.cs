@@ -1,15 +1,15 @@
 using System.Runtime.CompilerServices;
 using Klaxon.Core.Localization;
 
-// No parallelism: the Loc language is global state that tests switch. | Sem paralelismo: o idioma do Loc é estado global que os testes alternam.
+// No parallelism: the Loc language is global state that tests switch.
 [assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]
 
 namespace Klaxon.App.Tests;
 
-/// <summary>Test-run setup. | Configuração da execução dos testes.</summary>
+/// <summary>Test-run setup.</summary>
 internal static class TestInit
 {
-    /// <summary>Sets the language to English before any test runs. | Fixa o idioma em inglês antes de qualquer teste.</summary>
+    /// <summary>Sets the language to English before any test runs.</summary>
     [ModuleInitializer]
     internal static void Init() => Loc.Set(AppLanguage.English);
 }

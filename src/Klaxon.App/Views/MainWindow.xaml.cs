@@ -4,7 +4,7 @@ using Klaxon.App.ViewModels;
 
 namespace Klaxon.App.Views;
 
-/// <summary>The main window: alarms and daily-habits tabs. | A janela principal: abas de alarmes e de dia a dia.</summary>
+/// <summary>The main window: alarms and daily-habits tabs.</summary>
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
@@ -15,11 +15,11 @@ public partial class MainWindow : Window
         _viewModel = viewModel;
         DataContext = viewModel;
 
-        // Refresh the relative texts only while the window is visible. | Atualiza os textos relativos só enquanto a janela está visível.
+        // Refresh the relative texts only while the window is visible.
         IsVisibleChanged += (_, e) => _viewModel.SetActive((bool)e.NewValue);
     }
 
-    /// <summary>Closing hides to the tray instead of quitting. | Fechar esconde na bandeja em vez de encerrar.</summary>
+    /// <summary>Closing hides to the tray instead of quitting.</summary>
     protected override void OnClosing(CancelEventArgs e)
     {
         if (!App.IsShuttingDown)

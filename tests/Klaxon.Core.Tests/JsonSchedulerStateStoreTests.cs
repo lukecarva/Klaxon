@@ -24,7 +24,7 @@ public class JsonSchedulerStateStoreTests : IDisposable
         }
         catch (IOException)
         {
-            // Best-effort cleanup; a locked file must not fail the test. | Limpeza best-effort; um arquivo preso não pode derrubar o teste.
+            // Best-effort cleanup; a locked file must not fail the test.
         }
 
         GC.SuppressFinalize(this);
@@ -72,7 +72,7 @@ public class JsonSchedulerStateStoreTests : IDisposable
     [Fact]
     public void Adiamento_sem_hora_pendente_sobrevive_ao_round_trip()
     {
-        // A consumed snooze keeps its counter but has no pending wake time. | Um adiamento já consumido mantém o contador mas não tem hora de retorno.
+        // A consumed snooze keeps its counter but has no pending wake time.
         var store = new JsonSchedulerStateStore(_arquivo);
         var id = Guid.NewGuid();
 

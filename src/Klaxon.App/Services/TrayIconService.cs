@@ -9,7 +9,7 @@ using MainWindowView = Klaxon.App.Views.MainWindow;
 
 namespace Klaxon.App.Services;
 
-/// <summary>Manages the tray icon and its context menu. | Gerencia o ícone da bandeja e seu menu de contexto.</summary>
+/// <summary>Manages the tray icon and its context menu.</summary>
 public sealed class TrayIconService(IServiceProvider services, ILogger<TrayIconService> log) : IDisposable
 {
     private readonly IServiceProvider _services = services;
@@ -18,7 +18,7 @@ public sealed class TrayIconService(IServiceProvider services, ILogger<TrayIconS
     private TaskbarIcon? _icon;
     private bool _disposed;
 
-    /// <summary>Creates and shows the tray icon. | Cria e mostra o ícone da bandeja.</summary>
+    /// <summary>Creates and shows the tray icon.</summary>
     public void Show()
     {
         if (_icon is not null)
@@ -48,19 +48,19 @@ public sealed class TrayIconService(IServiceProvider services, ILogger<TrayIconS
 
         _icon.TrayMouseDoubleClick += (_, _) => ShowMainWindow();
 
-        // enablesEfficiencyMode: false keeps Windows from throttling the timers. | enablesEfficiencyMode: false impede o Windows de estrangular os timers.
+        // enablesEfficiencyMode: false keeps Windows from throttling the timers.
         _icon.ForceCreate(enablesEfficiencyMode: false);
 
         _log.LogInformation("Ícone da bandeja criado.");
     }
 
-    /// <summary>Shows a native Windows toast (the Whisper-level alert). | Mostra um toast nativo do Windows (o alerta do nível Sussurro).</summary>
+    /// <summary>Shows a native Windows toast (the Whisper-level alert).</summary>
     public void ShowBalloon(string title, string message)
     {
         _icon?.ShowNotification(title, message);
     }
 
-    /// <summary>Sets the tray tooltip text. | Define o texto do tooltip da bandeja.</summary>
+    /// <summary>Sets the tray tooltip text.</summary>
     public void SetStatus(string text)
     {
         if (_icon is not null)
@@ -69,7 +69,7 @@ public sealed class TrayIconService(IServiceProvider services, ILogger<TrayIconS
         }
     }
 
-    /// <summary>Shows and activates the main window. | Mostra e ativa a janela principal.</summary>
+    /// <summary>Shows and activates the main window.</summary>
     private void ShowMainWindow()
     {
         var window = _services.GetRequiredService<MainWindowView>();

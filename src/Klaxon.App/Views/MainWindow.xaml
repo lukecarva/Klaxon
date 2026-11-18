@@ -16,16 +16,16 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Header | Cabeçalho -->
+        <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,18">
             <TextBlock Style="{StaticResource Text.Title}" Text="{loc:Loc App_Name}" />
             <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,0" Text="{Binding NextAlarmSummary}" />
         </StackPanel>
 
-        <!-- Tabs | Abas -->
+        <!-- Tabs -->
         <TabControl Grid.Row="1" Style="{StaticResource Tabs}">
 
-            <!-- Alarms tab | Aba de alarmes -->
+            <!-- Alarms tab -->
             <TabItem Style="{StaticResource Tab}" Header="{loc:Loc Tab_Alarms}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -103,7 +103,7 @@
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <!-- Empty state | Estado vazio -->
+                    <!-- Empty state -->
                     <Border Grid.Row="1">
                         <Border.Style>
                             <Style TargetType="Border" BasedOn="{StaticResource Card}">
@@ -132,7 +132,7 @@
                 </Grid>
             </TabItem>
 
-            <!-- Daily tab | Aba de dia a dia -->
+            <!-- Daily tab -->
             <TabItem Style="{StaticResource Tab}" Header="{loc:Loc Tab_Habits}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -207,7 +207,7 @@
             </TabItem>
         </TabControl>
 
-        <!-- Footer | Rodapé -->
+        <!-- Footer -->
         <StackPanel Grid.Row="2" Margin="0,18,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <ToggleButton Style="{StaticResource Chip.Toggle}"

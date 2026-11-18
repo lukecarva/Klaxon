@@ -9,7 +9,7 @@
         Topmost="True"
         Background="{StaticResource Brush.Bg}">
 
-    <!-- Covers a secondary monitor during a critical alert; controls stay on the main screen. | Cobre um monitor secundário num alerta crítico; os controles ficam na tela principal. -->
+    <!-- Covers a secondary monitor during a critical alert; controls stay on the main screen. -->
     <Border BorderBrush="{Binding AccentBrush}" BorderThickness="0,5,0,0">
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
             <TextBlock Text="{Binding NowText}"

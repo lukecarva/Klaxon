@@ -6,14 +6,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Klaxon.App.ViewModels;
 
-/// <summary>One row of the "daily" tab: a ready reminder with an on/off toggle. | Uma linha da aba "dia a dia": um lembrete pronto com liga/desliga.</summary>
+/// <summary>One row of the "daily" tab: a ready reminder with an on/off toggle.</summary>
 public sealed partial class HabitRowViewModel : ObservableObject
 {
     private readonly HabitDefinition _habit;
     private readonly Action<HabitDefinition, bool, int> _onToggled;
     private readonly Action<HabitDefinition, int> _onIntervalChanged;
 
-    // While the row is (re)built from saved state, setters must not call back. | Enquanto a linha é (re)montada do estado salvo, os setters não podem retornar chamada.
+    // While the row is (re)built from saved state, setters must not call back.
     private readonly bool _building;
 
     public HabitRowViewModel(
@@ -38,20 +38,20 @@ public sealed partial class HabitRowViewModel : ObservableObject
         _building = false;
     }
 
-    /// <summary>Habit icon. | Ícone do hábito.</summary>
+    /// <summary>Habit icon.</summary>
     public string Emoji => _habit.Emoji;
 
-    /// <summary>Habit name. | Nome do hábito.</summary>
+    /// <summary>Habit name.</summary>
     public string Name => _habit.Name;
 
-    /// <summary>Short description. | Descrição curta.</summary>
+    /// <summary>Short description.</summary>
     public string Note => _habit.Note;
 
-    /// <summary>Whether the reminder is active. | Se o lembrete está ativo.</summary>
+    /// <summary>Whether the reminder is active.</summary>
     [ObservableProperty]
     private bool _isActive;
 
-    /// <summary>Interval in minutes, as text. | Intervalo em minutos, como texto.</summary>
+    /// <summary>Interval in minutes, as text.</summary>
     [ObservableProperty]
     private string _intervalText;
 
@@ -71,7 +71,7 @@ public sealed partial class HabitRowViewModel : ObservableObject
         }
     }
 
-    /// <summary>Parsed interval, or the default when invalid. | Intervalo lido, ou o padrão quando inválido.</summary>
+    /// <summary>Parsed interval, or the default when invalid.</summary>
     private int CurrentMinutes() =>
         int.TryParse(IntervalText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var m) && m >= 1
             ? m

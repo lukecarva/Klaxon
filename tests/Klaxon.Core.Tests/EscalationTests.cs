@@ -37,7 +37,7 @@ public class EscalationTests
             },
         };
 
-    // ---------- Initial trigger | Disparo inicial ----------
+    // ---------- Initial trigger
 
     [Fact]
     public void Disparo_normal_carrega_o_nivel_base_como_efetivo()
@@ -51,7 +51,7 @@ public class EscalationTests
         Assert.Equal(UrgencyLevel.Normal, disparos.Single().EffectiveUrgency);
     }
 
-    // ---------- Escalation by being ignored | Escalada por ser ignorado ----------
+    // ---------- Escalation by being ignored
 
     [Fact]
     public void Ignorado_pelo_prazo_reapresenta_um_nivel_acima()
@@ -59,13 +59,13 @@ public class EscalationTests
         var alarme = Escalavel(UrgencyLevel.Normal, aposIgnorar: TimeSpan.FromMinutes(10));
         var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
 
-        clock.Advance(TimeSpan.FromHours(1)); // fires at 7:00 | dispara às 7:00
+        clock.Advance(TimeSpan.FromHours(1)); // fires at 7:00
         scheduler.Tick();
         disparos.Clear();
 
         clock.Advance(TimeSpan.FromMinutes(9));
         scheduler.Tick();
-        Assert.Empty(disparos); // still within the 10 min | ainda dentro dos 10 min
+        Assert.Empty(disparos); // still within the 10 min
 
         clock.Advance(TimeSpan.FromMinutes(1));
         scheduler.Tick();
@@ -93,7 +93,7 @@ public class EscalationTests
         scheduler.Tick();
         Assert.Equal(UrgencyLevel.Critical, disparos[^1].EffectiveUrgency);
 
-        // At the ceiling (Critical) it stops rising and re-showing. | No teto (Crítico) para de subir e de reapresentar.
+        // At the ceiling (Critical) it stops rising and re-showing.
         var antes = disparos.Count;
         clock.Advance(TimeSpan.FromMinutes(30));
         scheduler.Tick();
@@ -114,7 +114,7 @@ public class EscalationTests
         scheduler.Tick();
         Assert.Equal(UrgencyLevel.High, disparos[^1].EffectiveUrgency);
 
-        // Ceiling is High: it never reaches Critical. | Teto é High: nunca chega a Crítico.
+        // Ceiling is High: it never reaches Critical.
         var antes = disparos.Count;
         clock.Advance(TimeSpan.FromMinutes(30));
         scheduler.Tick();
@@ -154,7 +154,7 @@ public class EscalationTests
         Assert.DoesNotContain(disparos, d => d.Kind == TriggerKind.Escalation);
     }
 
-    // ---------- Escalation by snoozing | Escalada por adiamento ----------
+    // ---------- Escalation by snoozing
 
     [Fact]
     public void Adiar_ate_o_limite_sobe_o_nivel_na_reapresentacao()
@@ -166,13 +166,13 @@ public class EscalationTests
         scheduler.Tick();
         disparos.Clear();
 
-        // 1st snooze: still Normal when it returns. | 1º adiamento: ainda Normal quando volta.
+        // 1st snooze: still Normal when it returns.
         Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(5), out _));
         clock.Advance(TimeSpan.FromMinutes(5));
         scheduler.Tick();
         Assert.Equal(UrgencyLevel.Normal, disparos[^1].EffectiveUrgency);
 
-        // 2nd snooze hits the threshold: returns as Important. | 2º adiamento atinge o limite: volta como Importante.
+        // 2nd snooze hits the threshold: returns as Important.
         Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(5), out _));
         clock.Advance(TimeSpan.FromMinutes(5));
         scheduler.Tick();
@@ -184,7 +184,7 @@ public class EscalationTests
     [Fact]
     public void Adiar_pausa_o_relogio_de_ignorado()
     {
-        // While snoozed the alert is off screen, so the ignore clock is paused. | Enquanto adiado o alerta está fora da tela, então o relógio de ignorado fica pausado.
+        // While snoozed the alert is off screen, so the ignore clock is paused.
         var alarme = Escalavel(UrgencyLevel.Normal, aposIgnorar: TimeSpan.FromMinutes(10));
         var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
 
@@ -193,7 +193,7 @@ public class EscalationTests
         Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(30), out _));
         disparos.Clear();
 
-        // 20 min snoozed: past 10 min, but paused, so nothing happens. | 20 min adiado: passou dos 10 min, mas pausado, nada acontece.
+        // 20 min snoozed: past 10 min, but paused, so nothing happens.
         clock.Advance(TimeSpan.FromMinutes(20));
         scheduler.Tick();
         Assert.Empty(disparos);
@@ -208,11 +208,11 @@ public class EscalationTests
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
         clock.Advance(TimeSpan.FromMinutes(10));
-        scheduler.Tick(); // rose to High | subiu para High
+        scheduler.Tick(); // rose to High
         Assert.Equal(UrgencyLevel.High, disparos[^1].EffectiveUrgency);
         disparos.Clear();
 
-        // Next day: starts over at Normal. | Dia seguinte: começa de novo em Normal.
+        // Next day: starts over at Normal.
         clock.SetTo(Utc(2026, 6, 11, 7, 0));
         scheduler.Tick();
 
@@ -222,7 +222,7 @@ public class EscalationTests
     [Fact]
     public void Escalada_ate_critico_passa_a_valer_o_limite_de_adiamento_do_critico()
     {
-        // After escalating to Critical, snooze follows Critical's 1x limit. | Após escalar a Crítico, o adiamento segue o limite 1x de Crítico.
+        // After escalating to Critical, snooze follows Critical's 1x limit.
         var alarme = Escalavel(UrgencyLevel.Normal, aposIgnorar: TimeSpan.FromMinutes(5));
         var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
 

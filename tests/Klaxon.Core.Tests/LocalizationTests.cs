@@ -3,7 +3,7 @@ using Klaxon.Core.Scheduling;
 
 namespace Klaxon.Core.Tests;
 
-/// <summary>Checks that the domain produces text in both languages. | Confere que o domínio produz texto nos dois idiomas.</summary>
+/// <summary>Checks that the domain produces text in both languages.</summary>
 public class LocalizationTests : IDisposable
 {
     public void Dispose()

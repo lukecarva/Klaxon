@@ -9,10 +9,10 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace Klaxon.App.ViewModels;
 
-/// <summary>A snooze choice shown on the alert. | Uma opção de adiamento mostrada no alerta.</summary>
+/// <summary>A snooze choice shown on the alert.</summary>
 public sealed record SnoozeOption(TimeSpan Duration, string Label);
 
-/// <summary>View model for an alert window. | View model de uma janela de alerta.</summary>
+/// <summary>View model for an alert window.</summary>
 public sealed partial class AlertViewModel : ObservableObject, IDisposable
 {
     private readonly IAlarmScheduler _scheduler;
@@ -37,7 +37,7 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
 
         if (mode == PresentationMode.Fullscreen)
         {
-            // Live clock, updated each second, for the full-screen overlay. | Relógio ao vivo, atualizado a cada segundo, para o overlay de tela cheia.
+            // Live clock, updated each second, for the full-screen overlay.
             NowText = DateTime.Now.ToString("HH:mm", Loc.Culture);
             _relogio = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _relogio.Tick += (_, _) => NowText = DateTime.Now.ToString("HH:mm", Loc.Culture);
@@ -45,43 +45,43 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>The trigger being shown. | O disparo sendo mostrado.</summary>
+    /// <summary>The trigger being shown.</summary>
     public AlarmTriggeredEventArgs Trigger { get; }
 
-    /// <summary>Presentation mode of this alert. | Modo de apresentação deste alerta.</summary>
+    /// <summary>Presentation mode of this alert.</summary>
     public PresentationMode Mode { get; }
 
-    /// <summary>How the alert is dismissed. | Como o alerta é dispensado.</summary>
+    /// <summary>How the alert is dismissed.</summary>
     public DismissMode DismissMode { get; }
 
-    /// <summary>Phrase required by type-to-dismiss. | Frase exigida pelo dispensar-digitando.</summary>
+    /// <summary>Phrase required by type-to-dismiss.</summary>
     public string DismissPhrase { get; }
 
-    /// <summary>Localized urgency name. | Nome localizado da urgência.</summary>
+    /// <summary>Localized urgency name.</summary>
     public string UrgencyName { get; }
 
-    /// <summary>Urgency accent color. | Cor de destaque da urgência.</summary>
+    /// <summary>Urgency accent color.</summary>
     public Brush AccentBrush { get; }
 
-    /// <summary>Available snooze options. | Opções de adiamento disponíveis.</summary>
+    /// <summary>Available snooze options.</summary>
     public IReadOnlyList<SnoozeOption> SnoozeOptions { get; }
 
-    /// <summary>Alarm title. | Título do alarme.</summary>
+    /// <summary>Alarm title.</summary>
     public string Title => Trigger.Alarm.Title;
 
-    /// <summary>Optional detail. | Detalhe opcional.</summary>
+    /// <summary>Optional detail.</summary>
     public string? Message => Trigger.Alarm.Message;
 
-    /// <summary>Whether there is a detail message. | Se há mensagem de detalhe.</summary>
+    /// <summary>Whether there is a detail message.</summary>
     public bool HasMessage => !string.IsNullOrWhiteSpace(Message);
 
-    /// <summary>Whether this is a missed alarm. | Se é um alarme perdido.</summary>
+    /// <summary>Whether this is a missed alarm.</summary>
     public bool IsMissed => Trigger.Kind == TriggerKind.Missed;
 
-    /// <summary>Whether snoozing is offered. | Se o adiamento é oferecido.</summary>
+    /// <summary>Whether snoozing is offered.</summary>
     public bool CanSnooze => SnoozeOptions.Count > 0;
 
-    /// <summary>Context line: on time, snoozed, escalated, or missed. | Linha de contexto: na hora, adiado, escalado, ou perdido.</summary>
+    /// <summary>Context line: on time, snoozed, escalated, or missed.</summary>
     public string WhenText
     {
         get
@@ -111,22 +111,22 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Big clock text on the full-screen overlay. | Texto do relógio grande no overlay de tela cheia.</summary>
+    /// <summary>Big clock text on the full-screen overlay.</summary>
     [ObservableProperty]
     private string _nowText = string.Empty;
 
-    /// <summary>Set when the scheduler refuses a snooze. | Preenchido quando o agendador recusa um adiamento.</summary>
+    /// <summary>Set when the scheduler refuses a snooze.</summary>
     [ObservableProperty]
     private string? _snoozeRefusal;
 
-    /// <summary>0..1, driven by the hold-to-dismiss button. | 0..1, alimentado pelo botão de segurar.</summary>
+    /// <summary>0..1, driven by the hold-to-dismiss button.</summary>
     [ObservableProperty]
     private double _holdProgress;
 
-    /// <summary>Raised when the window should close. | Emitido quando a janela deve fechar.</summary>
+    /// <summary>Raised when the window should close.</summary>
     public event Action? CloseRequested;
 
-    /// <summary>Dismisses the alarm and closes. | Dispensa o alarme e fecha.</summary>
+    /// <summary>Dismisses the alarm and closes.</summary>
     [RelayCommand]
     private void Dismiss()
     {
@@ -134,10 +134,10 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
         CloseRequested?.Invoke();
     }
 
-    /// <summary>Closes on timeout without dismissing, so escalation can continue. | Fecha por tempo sem dispensar, para a escalada poder continuar.</summary>
+    /// <summary>Closes on timeout without dismissing, so escalation can continue.</summary>
     public void TimeoutClose() => CloseRequested?.Invoke();
 
-    /// <summary>Snoozes for the chosen duration, or shows the refusal. | Adia pela duração escolhida, ou mostra a recusa.</summary>
+    /// <summary>Snoozes for the chosen duration, or shows the refusal.</summary>
     [RelayCommand]
     private void Snooze(SnoozeOption? option)
     {
@@ -152,7 +152,7 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
         SnoozeRefusal = recusa;
     }
 
-    /// <summary>Formats a delay as a short human-readable span. | Formata um atraso como um intervalo curto e legível.</summary>
+    /// <summary>Formats a delay as a short human-readable span.</summary>
     private static string Humanizar(TimeSpan intervalo)
     {
         if (intervalo.TotalMinutes < 1)

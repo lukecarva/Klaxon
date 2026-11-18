@@ -9,7 +9,7 @@ public class ScheduleTests
     private static DateTimeOffset Em(int ano, int mes, int dia, int hora, int min, int offsetHoras) =>
         new(ano, mes, dia, hora, min, 0, TimeSpan.FromHours(offsetHoras));
 
-    // ---------- Daily | Diário ----------
+    // ---------- Daily
 
     [Fact]
     public void Diario_pega_o_horario_de_hoje_quando_ainda_nao_passou()
@@ -34,7 +34,7 @@ public class ScheduleTests
     [Fact]
     public void Diario_mantem_a_hora_de_parede_quando_entra_o_horario_de_verao()
     {
-        // 7am stays 7am after the DST turn; only the offset changes. | 7h continua 7h após a virada de DST; só o offset muda.
+        // 7am stays 7am after the DST turn; only the offset changes.
         var agenda = new DailySchedule(new TimeOnly(7, 0));
 
         var proxima = agenda.NextOccurrenceAfter(Em(2026, 10, 14, 12, 0, -3), Dst);
@@ -45,7 +45,7 @@ public class ScheduleTests
     [Fact]
     public void Diario_dispara_no_fim_do_buraco_quando_a_hora_nao_existe()
     {
-        // 00:30 does not exist on Oct 15; fires at the end of the gap. | 00:30 não existe em 15/out; dispara no fim do buraco.
+        // 00:30 does not exist on Oct 15; fires at the end of the gap.
         var agenda = new DailySchedule(new TimeOnly(0, 30));
 
         var proxima = agenda.NextOccurrenceAfter(Em(2026, 10, 14, 23, 0, -3), Dst);
@@ -56,7 +56,7 @@ public class ScheduleTests
     [Fact]
     public void Diario_escolhe_a_primeira_passagem_quando_a_hora_acontece_duas_vezes()
     {
-        // 23:30 happens twice on Feb 14; fires on the first pass. | 23:30 acontece duas vezes em 14/fev; dispara na primeira passagem.
+        // 23:30 happens twice on Feb 14; fires on the first pass.
         var agenda = new DailySchedule(new TimeOnly(23, 30));
 
         var proxima = agenda.NextOccurrenceAfter(Em(2026, 2, 14, 12, 0, -2), Dst);
@@ -75,12 +75,12 @@ public class ScheduleTests
         Assert.True(proxima > agora, "NextOccurrenceAfter tem que ser estritamente posterior.");
     }
 
-    // ---------- Weekly | Semanal ----------
+    // ---------- Weekly
 
     [Fact]
     public void Semanal_pula_para_o_proximo_dia_marcado()
     {
-        // 2026-06-10 is a Wednesday; alarm is Mon/Fri. | 10/06/2026 é quarta; alarme é seg/sex.
+        // 2026-06-10 is a Wednesday; alarm is Mon/Fri.
         var agenda = new WeeklySchedule(WeekDays.Monday | WeekDays.Friday, new TimeOnly(9, 0));
 
         var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 10, 12, 0, -3), Dst);
@@ -92,7 +92,7 @@ public class ScheduleTests
     [Fact]
     public void Semanal_atravessa_a_virada_da_semana()
     {
-        // Friday night, alarm only on Monday. | Sexta à noite, alarme só de segunda.
+        // Friday night, alarm only on Monday.
         var agenda = new WeeklySchedule(WeekDays.Monday, new TimeOnly(9, 0));
 
         var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 12, 22, 0, -3), Dst);
@@ -124,7 +124,7 @@ public class ScheduleTests
         Assert.Equal("seg, qua, 08:30", agenda.Describe());
     }
 
-    // ---------- One-time | Única ----------
+    // ---------- One-time
 
     [Fact]
     public void Unica_no_futuro_devolve_o_instante_exato()

@@ -2,14 +2,14 @@ using NAudio.Wave;
 
 namespace Klaxon.App.Audio;
 
-/// <summary>Wraps an audio reader and restarts it seamlessly at the end. | Envolve um leitor de áudio e o reinicia sem emenda ao terminar.</summary>
+/// <summary>Wraps an audio reader and restarts it seamlessly at the end.</summary>
 public sealed class LoopingSampleProvider(AudioFileReader reader) : ISampleProvider
 {
     private readonly AudioFileReader _reader = reader;
 
     public WaveFormat WaveFormat => _reader.WaveFormat;
 
-    /// <summary>Reads samples, looping back to the start when the file ends. | Lê amostras, voltando ao início quando o arquivo acaba.</summary>
+    /// <summary>Reads samples, looping back to the start when the file ends.</summary>
     public int Read(float[] buffer, int offset, int count)
     {
         var total = 0;

@@ -3,7 +3,7 @@ using Klaxon.Core.Scheduling;
 
 namespace Klaxon.Core.Tests;
 
-/// <summary>Snooze/escalation survive a restart via CaptureState/RestoreState. | Adiamento/escalada sobrevivem a um reinício via CaptureState/RestoreState.</summary>
+/// <summary>Snooze/escalation survive a restart via CaptureState/RestoreState.</summary>
 public class SchedulerStatePersistenceTests
 {
     private static DateTimeOffset Utc(int ano, int mes, int dia, int hora, int min = 0) =>
@@ -18,7 +18,7 @@ public class SchedulerStatePersistenceTests
             Escalation = new EscalationPolicy { AfterIgnoredFor = aposIgnorar, Ceiling = UrgencyLevel.Critical },
         };
 
-    /// <summary>Builds a scheduler with the given alarms already loaded. | Monta um agendador com os alarmes dados já carregados.</summary>
+    /// <summary>Builds a scheduler with the given alarms already loaded.</summary>
     private static (AlarmScheduler Scheduler, FakeClock Clock, List<AlarmTriggeredEventArgs> Disparos) Montar(
         DateTimeOffset inicio,
         params Alarm[] alarmes)
@@ -40,7 +40,7 @@ public class SchedulerStatePersistenceTests
         var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
 
         clock.Advance(TimeSpan.FromHours(1));
-        scheduler.Tick(); // dispara às 7:00 | fires at 7:00
+        scheduler.Tick(); // dispara às 7:00
         Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(10), out _));
 
         var estado = scheduler.CaptureState();
@@ -62,7 +62,7 @@ public class SchedulerStatePersistenceTests
         Assert.True(antigo.TrySnooze(alarme.Id, TimeSpan.FromMinutes(10), out _));
         var estado = antigo.CaptureState();
 
-        // "Restart": a fresh scheduler reloads the alarms, then restores the state. | "Reinício": um agendador novo recarrega os alarmes e depois restaura o estado.
+        // "Restart": a fresh scheduler reloads the alarms, then restores the state.
         var novoClock = new FakeClock(Utc(2026, 6, 10, 7, 5));
         var novo = new AlarmScheduler(novoClock);
         novo.Reload([alarme]);
@@ -82,7 +82,7 @@ public class SchedulerStatePersistenceTests
         Assert.True(antigo.TrySnooze(alarme.Id, TimeSpan.FromMinutes(10), out _)); // volta às 7:10
         var estado = antigo.CaptureState();
 
-        // Restart at 7:15: the snooze came due while the app was closed. | Reinício às 7:15: o adiamento venceu com o app fechado.
+        // Restart at 7:15: the snooze came due while the app was closed.
         var novoClock = new FakeClock(Utc(2026, 6, 10, 7, 15));
         var novo = new AlarmScheduler(novoClock);
         var disparos = new List<AlarmTriggeredEventArgs>();
@@ -106,14 +106,14 @@ public class SchedulerStatePersistenceTests
         clock.Advance(TimeSpan.FromHours(1));
         antigo.Tick(); // 7:00, Normal
         clock.Advance(TimeSpan.FromMinutes(10));
-        antigo.Tick(); // sobe para High | rises to High
+        antigo.Tick(); // sobe para High
         Assert.Equal(UrgencyLevel.High, disparos[^1].EffectiveUrgency);
 
         var estado = antigo.CaptureState();
         var escalada = Assert.Single(estado.Escalations);
         Assert.Equal(UrgencyLevel.High, escalada.Level);
 
-        // Restart: escalation resumes from High and rises to Critical. | Reinício: a escalada retoma de High e sobe para Crítico.
+        // Restart: escalation resumes from High and rises to Critical.
         var novoClock = new FakeClock(Utc(2026, 6, 10, 7, 20));
         var novo = new AlarmScheduler(novoClock);
         var novosDisparos = new List<AlarmTriggeredEventArgs>();
@@ -139,14 +139,14 @@ public class SchedulerStatePersistenceTests
         var (scheduler, _, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
         scheduler.RestoreState(estado);
 
-        // The orphan snooze was dropped, so nothing extra is pending. | O adiamento órfão foi descartado, então nada extra fica pendente.
+        // The orphan snooze was dropped, so nothing extra is pending.
         Assert.True(scheduler.CaptureState().IsEmpty);
     }
 
     [Fact]
     public void Restaurar_descarta_escalada_quando_a_politica_foi_removida()
     {
-        // The alarm still exists but no longer escalates: the saved escalation is dropped. | O alarme ainda existe mas não escala mais: a escalada salva é descartada.
+        // The alarm still exists but no longer escalates: the saved escalation is dropped.
         var alarme = Diario();
         var estado = new SchedulerState
         {
@@ -205,7 +205,7 @@ public class SchedulerStatePersistenceTests
         var mudou = 0;
         scheduler.StateChanged += (_, _) => mudou++;
 
-        // The alarm is gone: Reload drops its snooze and must persist the removal. | O alarme sumiu: o Reload descarta o adiamento e precisa persistir a remoção.
+        // The alarm is gone: Reload drops its snooze and must persist the removal.
         scheduler.Reload([]);
 
         Assert.True(mudou > 0, "Descartar órfãos no Reload deve emitir StateChanged.");

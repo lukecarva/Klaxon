@@ -8,7 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace Klaxon.App.ViewModels;
 
-/// <summary>Which kind of schedule the editor is building. | Que tipo de agenda o editor está montando.</summary>
+/// <summary>Which kind of schedule the editor is building.</summary>
 public enum ScheduleKind
 {
     Once,
@@ -17,7 +17,7 @@ public enum ScheduleKind
     Interval,
 }
 
-/// <summary>A weekday toggle in the editor. | Um dia da semana no seletor do editor.</summary>
+/// <summary>A weekday toggle in the editor.</summary>
 public sealed partial class DayToggle : ObservableObject
 {
     public required WeekDays Flag { get; init; }
@@ -28,37 +28,37 @@ public sealed partial class DayToggle : ObservableObject
     private bool _isChecked;
 }
 
-/// <summary>An urgency choice in the editor. | Uma opção de urgência no editor.</summary>
+/// <summary>An urgency choice in the editor.</summary>
 public sealed partial class UrgencyChoice : ObservableObject
 {
     public required UrgencyProfile Profile { get; init; }
 
-    /// <summary>Localized level name. | Nome localizado do nível.</summary>
+    /// <summary>Localized level name.</summary>
     public string Label => Loc.UrgencyName(Profile.Level);
 
     [ObservableProperty]
     private bool _isChecked;
 }
 
-/// <summary>View model of the create/edit alarm dialog. | View model do diálogo de criar/editar alarme.</summary>
+/// <summary>View model of the create/edit alarm dialog.</summary>
 public sealed partial class AlarmEditorViewModel : ObservableObject
 {
-    /// <summary>Idle time treated as "away" for new alarms. | Tempo ocioso tratado como "ausente" para alarmes novos.</summary>
+    /// <summary>Idle time treated as "away" for new alarms.</summary>
     private static readonly TimeSpan IdleThreshold = TimeSpan.FromMinutes(5);
 
-    /// <summary>Current-language culture. | Cultura do idioma atual.</summary>
+    /// <summary>Current-language culture.</summary>
     private static CultureInfo Culture => Loc.Culture;
 
-    /// <summary>Date pattern of the current language (dd/MM/yyyy or MM/dd/yyyy). | Padrão de data do idioma atual (dd/MM/yyyy ou MM/dd/yyyy).</summary>
+    /// <summary>Date pattern of the current language (dd/MM/yyyy or MM/dd/yyyy).</summary>
     private static string DatePattern => Loc.Get("Fmt_DateLong");
 
     private readonly ISystemClock _clock;
     private readonly Guid _id;
 
-    /// <summary>Cycle anchor of the edited alarm, if it had one. | Âncora do ciclo do alarme editado, se havia.</summary>
+    /// <summary>Cycle anchor of the edited alarm, if it had one.</summary>
     private readonly DateTimeOffset? _ancoraOriginal;
 
-    /// <summary>Interval the alarm had when opened. | Intervalo que o alarme tinha ao abrir.</summary>
+    /// <summary>Interval the alarm had when opened.</summary>
     private readonly TimeSpan? _intervaloOriginal;
 
     public AlarmEditorViewModel(ISystemClock clock, Alarm? existente = null)
@@ -81,7 +81,7 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
 
         Urgencies = [.. UrgencyProfiles.All.Select(p => new UrgencyChoice { Profile = p })];
 
-        // Default to a near-future rounded time so a one-time alarm is not born in the past. | Padrão num horário futuro arredondado para um alarme de uma vez não nascer no passado.
+        // Default to a near-future rounded time so a one-time alarm is not born in the past.
         var sugestao = ProximoHorarioRedondo(_clock);
         _dateText = sugestao.ToString(DatePattern, Culture);
         _timeText = sugestao.ToString("HH:mm", Culture);
@@ -109,16 +109,16 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
         LoadSchedule(existente.Schedule);
     }
 
-    /// <summary>Whether this is a new alarm. | Se é um alarme novo.</summary>
+    /// <summary>Whether this is a new alarm.</summary>
     public bool IsNew { get; }
 
-    /// <summary>Localized window title. | Título localizado da janela.</summary>
+    /// <summary>Localized window title.</summary>
     public string WindowTitle => Loc.Get(IsNew ? "Editor_New" : "Editor_Edit");
 
-    /// <summary>Weekday toggles. | Seletores de dia da semana.</summary>
+    /// <summary>Weekday toggles.</summary>
     public IReadOnlyList<DayToggle> Days { get; }
 
-    /// <summary>Urgency choices. | Opções de urgência.</summary>
+    /// <summary>Urgency choices.</summary>
     public IReadOnlyList<UrgencyChoice> Urgencies { get; }
 
     [ObservableProperty]
@@ -130,19 +130,19 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
     [ObservableProperty]
     private string _customSoundPath = string.Empty;
 
-    /// <summary>Time as "HH:mm". | Hora como "HH:mm".</summary>
+    /// <summary>Time as "HH:mm".</summary>
     [ObservableProperty]
     private string _timeText;
 
-    /// <summary>Date, used only for one-time alarms. | Data, usada só em alarmes de uma vez.</summary>
+    /// <summary>Date, used only for one-time alarms.</summary>
     [ObservableProperty]
     private string _dateText;
 
-    /// <summary>Minutes between firings, for interval schedules. | Minutos entre disparos, para agendas por intervalo.</summary>
+    /// <summary>Minutes between firings, for interval schedules.</summary>
     [ObservableProperty]
     private string _intervalMinutesText = "45";
 
-    /// <summary>Whether the interval is limited to a time range. | Se o intervalo é limitado a uma faixa de horário.</summary>
+    /// <summary>Whether the interval is limited to a time range.</summary>
     [ObservableProperty]
     private bool _useWindow = true;
 
@@ -152,15 +152,15 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
     [ObservableProperty]
     private string _windowToText = "18:00";
 
-    /// <summary>Don't alert while keyboard/mouse are idle. | Não alertar enquanto teclado/mouse estão parados.</summary>
+    /// <summary>Don't alert while keyboard/mouse are idle.</summary>
     [ObservableProperty]
     private bool _skipWhenAway;
 
-    /// <summary>Escalate when the alert is ignored. | Escalar quando o alerta é ignorado.</summary>
+    /// <summary>Escalate when the alert is ignored.</summary>
     [ObservableProperty]
     private bool _escalate;
 
-    /// <summary>Selected schedule kind. | Tipo de agenda selecionado.</summary>
+    /// <summary>Selected schedule kind.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsOnce))]
     [NotifyPropertyChangedFor(nameof(IsDaily))]
@@ -193,25 +193,25 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
         set { if (value) { Kind = ScheduleKind.Interval; } }
     }
 
-    /// <summary>Interval schedules have no fixed time. | Agendas por intervalo não têm hora marcada.</summary>
+    /// <summary>Interval schedules have no fixed time.</summary>
     public bool HasFixedTime => Kind != ScheduleKind.Interval;
 
-    /// <summary>Set when the user confirms; null if cancelled. | Preenchido quando o usuário confirma; nulo se cancelou.</summary>
+    /// <summary>Set when the user confirms; null if cancelled.</summary>
     public Alarm? Result { get; private set; }
 
-    /// <summary>Raised to close the dialog (true = saved). | Emitido para fechar o diálogo (true = salvo).</summary>
+    /// <summary>Raised to close the dialog (true = saved).</summary>
     public event Action<bool>? CloseRequested;
 
-    /// <summary>Raised with a message when validation fails. | Emitido com uma mensagem quando a validação falha.</summary>
+    /// <summary>Raised with a message when validation fails.</summary>
     public event Action<string>? ValidationFailed;
 
-    /// <summary>Now plus a small buffer, rounded up to the next 5 minutes. | Agora mais uma folga, arredondado para o próximo múltiplo de 5 min.</summary>
+    /// <summary>Now plus a small buffer, rounded up to the next 5 minutes.</summary>
     private static DateTime ProximoHorarioRedondo(ISystemClock clock)
     {
         var agora = TimeZoneInfo.ConvertTime(clock.Now, clock.LocalTimeZone).DateTime;
 
         var alvo = agora.AddSeconds(30);
-        alvo = alvo.AddTicks(-(alvo.Ticks % TimeSpan.TicksPerMinute)); // drop seconds | zera segundos
+        alvo = alvo.AddTicks(-(alvo.Ticks % TimeSpan.TicksPerMinute)); // drop seconds
 
         var resto = alvo.Minute % 5;
         if (resto != 0)
@@ -226,7 +226,7 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
         return alvo;
     }
 
-    /// <summary>Validates and, on success, produces the alarm and closes. | Valida e, se ok, produz o alarme e fecha.</summary>
+    /// <summary>Validates and, on success, produces the alarm and closes.</summary>
     [RelayCommand]
     private void Save()
     {
@@ -240,11 +240,11 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
         CloseRequested?.Invoke(true);
     }
 
-    /// <summary>Cancels without saving. | Cancela sem salvar.</summary>
+    /// <summary>Cancels without saving.</summary>
     [RelayCommand]
     private void Cancel() => CloseRequested?.Invoke(false);
 
-    /// <summary>Opens a file dialog to pick a custom sound. | Abre um diálogo para escolher um som próprio.</summary>
+    /// <summary>Opens a file dialog to pick a custom sound.</summary>
     [RelayCommand]
     private void BrowseSound()
     {
@@ -261,11 +261,11 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
         }
     }
 
-    /// <summary>Clears the custom sound. | Limpa o som próprio.</summary>
+    /// <summary>Clears the custom sound.</summary>
     [RelayCommand]
     private void ClearSound() => CustomSoundPath = string.Empty;
 
-    /// <summary>Validates the fields and builds the alarm, or returns an error. | Valida os campos e monta o alarme, ou retorna um erro.</summary>
+    /// <summary>Validates the fields and builds the alarm, or returns an error.</summary>
     private bool TryBuild(out Alarm? alarme, out string? erro)
     {
         alarme = null;
@@ -318,7 +318,7 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
                     ate = fim;
                 }
 
-                // Keep the running cycle's anchor unless the interval changed. | Mantém a âncora do ciclo em curso, a menos que o intervalo mude.
+                // Keep the running cycle's anchor unless the interval changed.
                 var novoIntervalo = TimeSpan.FromMinutes(minutos);
                 var ancora = novoIntervalo == _intervaloOriginal && _ancoraOriginal is not null
                     ? _ancoraOriginal.Value
@@ -383,7 +383,7 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
         return true;
     }
 
-    /// <summary>Checks the urgency choice matching the level. | Marca a opção de urgência correspondente ao nível.</summary>
+    /// <summary>Checks the urgency choice matching the level.</summary>
     private void SelectUrgency(UrgencyLevel level)
     {
         foreach (var opcao in Urgencies)
@@ -392,7 +392,7 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
         }
     }
 
-    /// <summary>Fills the fields from an existing schedule. | Preenche os campos a partir de uma agenda existente.</summary>
+    /// <summary>Fills the fields from an existing schedule.</summary>
     private void LoadSchedule(ISchedule agenda)
     {
         switch (agenda)

@@ -4,7 +4,7 @@ using Klaxon.Core.Persistence;
 
 namespace Klaxon.App.Tests;
 
-/// <summary>Fixed clock for tests. | Relógio fixo para os testes.</summary>
+/// <summary>Fixed clock for tests.</summary>
 public sealed class FixedClock(DateTimeOffset now, TimeZoneInfo? zone = null) : ISystemClock
 {
     public DateTimeOffset Now { get; set; } = now;
@@ -12,12 +12,12 @@ public sealed class FixedClock(DateTimeOffset now, TimeZoneInfo? zone = null) : 
     public TimeZoneInfo LocalTimeZone { get; } = zone ?? TimeZoneInfo.Utc;
 }
 
-/// <summary>In-memory alarm store for tests. | Armazenamento de alarmes em memória para os testes.</summary>
+/// <summary>In-memory alarm store for tests.</summary>
 public sealed class InMemoryAlarmStore : IAlarmStore
 {
     private List<Alarm> _items = [];
 
-    /// <summary>How many times Save was called. | Quantas vezes Save foi chamado.</summary>
+    /// <summary>How many times Save was called.</summary>
     public int SaveCount { get; private set; }
 
     public IReadOnlyList<Alarm> Load() => _items;

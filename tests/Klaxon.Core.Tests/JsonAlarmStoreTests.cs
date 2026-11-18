@@ -24,7 +24,7 @@ public class JsonAlarmStoreTests : IDisposable
         }
         catch (IOException)
         {
-            // Best-effort cleanup; a locked file must not fail the test. | Limpeza best-effort; um arquivo preso não pode derrubar o teste.
+            // Best-effort cleanup; a locked file must not fail the test.
         }
 
         GC.SuppressFinalize(this);
@@ -41,7 +41,7 @@ public class JsonAlarmStoreTests : IDisposable
     [Fact]
     public void Round_trip_preserva_o_tipo_de_agenda()
     {
-        // ISchedule is polymorphic; the "$type" discriminator must round-trip. | ISchedule é polimórfico; o discriminador "$type" precisa sobreviver ao round-trip.
+        // ISchedule is polymorphic; the "$type" discriminator must round-trip.
         var store = new JsonAlarmStore(_arquivo);
 
         var originais = new[]
@@ -89,7 +89,7 @@ public class JsonAlarmStoreTests : IDisposable
 
         var agenda = Assert.IsType<IntervalSchedule>(lido.Schedule);
 
-        // The anchor must round-trip so the cycle survives an app restart. | A âncora precisa sobreviver ao round-trip para o ciclo resistir a reiniciar o app.
+        // The anchor must round-trip so the cycle survives an app restart.
         Assert.Equal(ancora, agenda.Anchor);
         Assert.Equal(new TimeOnly(9, 0), agenda.ActiveFrom);
         Assert.Equal(TimeSpan.FromMinutes(5), lido.SkipIfIdleFor);
@@ -111,7 +111,7 @@ public class JsonAlarmStoreTests : IDisposable
     [Fact]
     public void Nao_grava_propriedades_calculadas_no_arquivo()
     {
-        // Derived (computed) members must not be serialized. | Membros derivados (calculados) não podem ser serializados.
+        // Derived (computed) members must not be serialized.
         var store = new JsonAlarmStore(_arquivo);
 
         store.Save(
@@ -130,7 +130,7 @@ public class JsonAlarmStoreTests : IDisposable
         Assert.DoesNotContain("\"HasWindow\"", json);
         Assert.DoesNotContain("\"DefaultOption\"", json);
 
-        // What must be present is still present. | O que precisa estar continua lá.
+        // What must be present is still present.
         Assert.Contains("\"Urgency\": \"High\"", json);
         Assert.Contains("\"$type\": \"interval\"", json);
         Assert.Contains("\"ActiveFrom\"", json);

@@ -6,17 +6,17 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Klaxon.Core.Persistence;
 
-/// <summary>Loads and saves the scheduler's runtime state (snoozes and escalations). | Carrega e salva o estado de execução do agendador (adiamentos e escaladas).</summary>
+/// <summary>Loads and saves the scheduler's runtime state (snoozes and escalations).</summary>
 public interface ISchedulerStateStore
 {
-    /// <summary>Reads the saved state, or an empty state when there is none. | Lê o estado salvo, ou um estado vazio quando não há.</summary>
+    /// <summary>Reads the saved state, or an empty state when there is none.</summary>
     SchedulerState Load();
 
-    /// <summary>Writes the current state. | Grava o estado atual.</summary>
+    /// <summary>Writes the current state.</summary>
     void Save(SchedulerState state);
 }
 
-/// <summary>Stores the scheduler state in a JSON file next to the alarms. | Guarda o estado do agendador num arquivo JSON ao lado dos alarmes.</summary>
+/// <summary>Stores the scheduler state in a JSON file next to the alarms.</summary>
 public sealed class JsonSchedulerStateStore : ISchedulerStateStore
 {
     private readonly string _path;
@@ -28,7 +28,7 @@ public sealed class JsonSchedulerStateStore : ISchedulerStateStore
         _log = log ?? NullLogger<JsonSchedulerStateStore>.Instance;
     }
 
-    /// <summary>Reads the state; quarantines an unreadable file and returns empty. | Lê o estado; põe em quarentena um arquivo ilegível e retorna vazio.</summary>
+    /// <summary>Reads the state; quarantines an unreadable file and returns empty.</summary>
     public SchedulerState Load()
     {
         if (!File.Exists(_path))
@@ -44,7 +44,7 @@ public sealed class JsonSchedulerStateStore : ISchedulerStateStore
         }
         catch (Exception ex) when (ex is JsonException or NotSupportedException)
         {
-            // Move the unreadable file aside instead of overwriting it. | Move o arquivo ilegível para o lado em vez de sobrescrevê-lo.
+            // Move the unreadable file aside instead of overwriting it.
             var quarentena = $"{_path}.corrompido-{DateTime.Now:yyyyMMdd-HHmmss}";
 
             _log.LogError(
@@ -65,7 +65,7 @@ public sealed class JsonSchedulerStateStore : ISchedulerStateStore
         }
     }
 
-    /// <summary>Writes the state atomically (temp file + replace with backup). | Grava o estado de forma atômica (arquivo temporário + replace com backup).</summary>
+    /// <summary>Writes the state atomically (temp file + replace with backup).</summary>
     public void Save(SchedulerState state)
     {
         var json = JsonSerializer.Serialize(state, JsonAlarmStore.SerializerOptions);
