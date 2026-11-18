@@ -1,11 +1,12 @@
 # ⏰ Klaxon
 
-[![CI](https://github.com/lukecarva/Alarm-Clock/actions/workflows/ci.yml/badge.svg)](https://github.com/lukecarva/Alarm-Clock/actions/workflows/ci.yml)
+[![CI](https://github.com/lukecarva/Klaxon/actions/workflows/ci.yml/badge.svg)](https://github.com/lukecarva/Klaxon/actions/workflows/ci.yml)
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Klaxon de bandeja para Windows, pensado para quem passa o dia no PC. A ideia
-central são os **níveis de urgência**: cada alarme define o quão intrusivo é o
+Klaxon é um despertador de bandeja para Windows, pensado para quem passa o dia no
+PC. A ideia central são os **níveis de urgência**: cada alarme define o quão
+intrusivo é o
 alerta — de um toast silencioso a um overlay em tela cheia que só sai com uma
 ação deliberada. Alarmes ignorados **sobem de nível** sozinhos, e lembretes
 cíclicos ("beba água a cada 45 min") não atrapalham quando você não está na
