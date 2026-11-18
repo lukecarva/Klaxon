@@ -483,11 +483,11 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# O padrao "*.app" acima (bundle do macOS, herdado do template do Visual Studio)
-# casa tambem com o DIRETORIO src/AlarmClock.App e excluiria o projeto WPF
-# inteiro do repositorio. Reincluido explicitamente.
-!AlarmClock.App/
+# The "*.app" pattern above (macOS bundle, inherited from the Visual Studio
+# template) also matches the src/Klaxon.App DIRECTORY and would exclude the whole
+# WPF project from the repository. Re-included explicitly.
+!Klaxon.App/
 
-# Artefatos do instalador (gerados por build/build-installer.ps1)
+# Installer artifacts (produced by build/build-installer.ps1)
 /build/publish/
 /build/dist/
