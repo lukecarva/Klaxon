@@ -13,9 +13,9 @@ public sealed record OneTimeSchedule(DateTimeOffset At) : ISchedule
     public string Describe()
     {
         var local = At.ToLocalTime();
-        var data = local.ToString(Loc.Get("Fmt_DateLong"), Loc.Culture);
-        var hora = local.ToString("HH:mm", Loc.Culture);
-        return $"{data} {Loc.Get("Sched_At")} {hora}";
+        var date = local.ToString(Loc.Get("Fmt_DateLong"), Loc.Culture);
+        var time = local.ToString("HH:mm", Loc.Culture);
+        return $"{date} {Loc.Get("Sched_At")} {time}";
     }
 }
 
@@ -79,27 +79,27 @@ public sealed record WeeklySchedule(WeekDays Days, TimeOnly At) : ISchedule
     /// <summary>Localized text (special-cases weekdays/weekend/every day).</summary>
     public string Describe()
     {
-        var hora = At.ToString("HH\\:mm", Loc.Culture);
+        var time = At.ToString("HH\\:mm", Loc.Culture);
 
         if (Days == WeekDays.Every)
         {
-            return Loc.Format("Sched_EveryDay", hora);
+            return Loc.Format("Sched_EveryDay", time);
         }
 
         if (Days == WeekDays.Weekdays)
         {
-            return Loc.Format("Sched_Weekdays", hora);
+            return Loc.Format("Sched_Weekdays", time);
         }
 
         if (Days == WeekDays.Weekend)
         {
-            return Loc.Format("Sched_Weekend", hora);
+            return Loc.Format("Sched_Weekend", time);
         }
 
-        var dias = Enumerable.Range(0, 7)
+        var days = Enumerable.Range(0, 7)
             .Where(i => Days.Includes((DayOfWeek)i))
             .Select(i => Loc.Get($"Day_{i}"));
 
-        return $"{string.Join(", ", dias)}, {hora}";
+        return $"{string.Join(", ", days)}, {time}";
     }
 }

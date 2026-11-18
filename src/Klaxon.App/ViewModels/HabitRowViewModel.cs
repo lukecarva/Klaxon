@@ -28,12 +28,12 @@ public sealed partial class HabitRowViewModel : ObservableObject
 
         _building = true;
 
-        var minutos = existing?.Schedule is IntervalSchedule agenda
-            ? (int)agenda.Every.TotalMinutes
+        var minutes = existing?.Schedule is IntervalSchedule schedule
+            ? (int)schedule.Every.TotalMinutes
             : habit.DefaultMinutes;
 
         _isActive = existing is { IsEnabled: true };
-        _intervalText = minutos.ToString(CultureInfo.InvariantCulture);
+        _intervalText = minutes.ToString(CultureInfo.InvariantCulture);
 
         _building = false;
     }

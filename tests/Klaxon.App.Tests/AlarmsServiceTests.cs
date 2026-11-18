@@ -20,13 +20,13 @@ public class AlarmsServiceTests
         store.Save([SampleAlarm()]);
 
         var service = NewService(store);
-        var mudou = 0;
-        service.Changed += (_, _) => mudou++;
+        var changed = 0;
+        service.Changed += (_, _) => changed++;
 
         service.Load();
 
         Assert.Single(service.Items);
-        Assert.Equal(1, mudou);
+        Assert.Equal(1, changed);
     }
 
     [Fact]
@@ -34,14 +34,14 @@ public class AlarmsServiceTests
     {
         var store = new InMemoryAlarmStore();
         var service = NewService(store);
-        var mudou = 0;
-        service.Changed += (_, _) => mudou++;
+        var changed = 0;
+        service.Changed += (_, _) => changed++;
 
         service.AddOrUpdate(SampleAlarm());
 
         Assert.Single(service.Items);
         Assert.Equal(1, store.SaveCount);
-        Assert.Equal(1, mudou);
+        Assert.Equal(1, changed);
     }
 
     [Fact]
@@ -49,10 +49,10 @@ public class AlarmsServiceTests
     {
         var store = new InMemoryAlarmStore();
         var service = NewService(store);
-        var alarme = SampleAlarm();
+        var alarm = SampleAlarm();
 
-        service.AddOrUpdate(alarme);
-        service.AddOrUpdate(alarme with { Title = "Novo título" });
+        service.AddOrUpdate(alarm);
+        service.AddOrUpdate(alarm with { Title = "Novo título" });
 
         Assert.Single(service.Items);
         Assert.Equal("Novo título", service.Items[0].Title);
@@ -63,10 +63,10 @@ public class AlarmsServiceTests
     {
         var store = new InMemoryAlarmStore();
         var service = NewService(store);
-        var alarme = SampleAlarm();
-        service.AddOrUpdate(alarme);
+        var alarm = SampleAlarm();
+        service.AddOrUpdate(alarm);
 
-        service.Remove(alarme.Id);
+        service.Remove(alarm.Id);
 
         Assert.Empty(service.Items);
     }
@@ -77,12 +77,12 @@ public class AlarmsServiceTests
         var store = new InMemoryAlarmStore();
         var service = NewService(store);
         service.AddOrUpdate(SampleAlarm());
-        var antes = store.SaveCount;
+        var before = store.SaveCount;
 
         service.Remove(Guid.NewGuid());
 
         Assert.Single(service.Items);
-        Assert.Equal(antes, store.SaveCount);
+        Assert.Equal(before, store.SaveCount);
     }
 
     [Fact]
@@ -90,10 +90,10 @@ public class AlarmsServiceTests
     {
         var store = new InMemoryAlarmStore();
         var service = NewService(store);
-        var alarme = SampleAlarm();
-        service.AddOrUpdate(alarme);
+        var alarm = SampleAlarm();
+        service.AddOrUpdate(alarm);
 
-        service.SetEnabled(alarme.Id, false);
+        service.SetEnabled(alarm.Id, false);
 
         Assert.False(service.Items.Single().IsEnabled);
     }
@@ -103,11 +103,11 @@ public class AlarmsServiceTests
     {
         var store = new InMemoryAlarmStore();
         var service = NewService(store);
-        var alarme = SampleAlarm();
-        service.AddOrUpdate(alarme);
+        var alarm = SampleAlarm();
+        service.AddOrUpdate(alarm);
         var saves = store.SaveCount;
 
-        service.SetEnabled(alarme.Id, true); // já está habilitado
+        service.SetEnabled(alarm.Id, true); // already enabled
 
         Assert.Equal(saves, store.SaveCount);
     }

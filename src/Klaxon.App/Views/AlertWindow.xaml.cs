@@ -86,10 +86,10 @@ public partial class AlertWindow : Window
     /// <summary>Advances the hold progress and dismisses when it completes.</summary>
     private void OnHoldTick(object? sender, EventArgs e)
     {
-        var decorrido = DateTime.UtcNow - _holdStart;
-        var progresso = decorrido / HoldDuration;
+        var elapsed = DateTime.UtcNow - _holdStart;
+        var progress = elapsed / HoldDuration;
 
-        if (progresso >= 1d)
+        if (progress >= 1d)
         {
             _holdTicker.Stop();
             _viewModel.HoldProgress = 1;
@@ -97,7 +97,7 @@ public partial class AlertWindow : Window
             return;
         }
 
-        _viewModel.HoldProgress = progresso;
+        _viewModel.HoldProgress = progress;
     }
 
     // ---------- Type the phrase
@@ -105,9 +105,9 @@ public partial class AlertWindow : Window
     /// <summary>Dismisses once the typed text matches the phrase.</summary>
     private void OnPhraseChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
-        var digitado = PhraseBox.Text.Trim();
+        var typed = PhraseBox.Text.Trim();
 
-        if (string.Equals(digitado, _viewModel.DismissPhrase, StringComparison.CurrentCultureIgnoreCase))
+        if (string.Equals(typed, _viewModel.DismissPhrase, StringComparison.CurrentCultureIgnoreCase))
         {
             _viewModel.DismissCommand.Execute(null);
         }

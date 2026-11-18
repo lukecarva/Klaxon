@@ -32,11 +32,11 @@ public sealed class AlarmsService(IAlarmStore store, ILogger<AlarmsService> log)
     /// <summary>Adds a new alarm or replaces one with the same id.</summary>
     public void AddOrUpdate(Alarm alarm)
     {
-        var indice = _items.FindIndex(a => a.Id == alarm.Id);
+        var index = _items.FindIndex(a => a.Id == alarm.Id);
 
-        if (indice >= 0)
+        if (index >= 0)
         {
-            _items[indice] = alarm;
+            _items[index] = alarm;
             _log.LogInformation("Alarme {Titulo} atualizado.", alarm.Title);
         }
         else

@@ -15,28 +15,28 @@ public sealed class AlarmDialogs
     public AlarmDialogs(ISystemClock clock) => _clock = clock;
 
     /// <summary>Shows the editor; returns the edited alarm, or null if cancelled.</summary>
-    public Alarm? Edit(Alarm? existente)
+    public Alarm? Edit(Alarm? existing)
     {
-        var viewModel = new AlarmEditorViewModel(_clock, existente);
+        var viewModel = new AlarmEditorViewModel(_clock, existing);
 
-        var janela = new AlarmEditorWindow(viewModel)
+        var window = new AlarmEditorWindow(viewModel)
         {
             Owner = Application.Current.MainWindow,
         };
 
-        return janela.ShowDialog() == true ? viewModel.Result : null;
+        return window.ShowDialog() == true ? viewModel.Result : null;
     }
 
     /// <summary>Asks the user to confirm deleting an alarm.</summary>
-    public bool ConfirmDelete(string titulo)
+    public bool ConfirmDelete(string title)
     {
-        var resposta = MessageBox.Show(
-            Loc.Format("Confirm_Delete", titulo),
+        var answer = MessageBox.Show(
+            Loc.Format("Confirm_Delete", title),
             Loc.Get("App_Name"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Question,
             MessageBoxResult.No);
 
-        return resposta == MessageBoxResult.Yes;
+        return answer == MessageBoxResult.Yes;
     }
 }

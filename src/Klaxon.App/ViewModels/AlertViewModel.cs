@@ -16,7 +16,7 @@ public sealed record SnoozeOption(TimeSpan Duration, string Label);
 public sealed partial class AlertViewModel : ObservableObject, IDisposable
 {
     private readonly IAlarmScheduler _scheduler;
-    private readonly DispatcherTimer? _relogio;
+    private readonly DispatcherTimer? _clockTimer;
 
     public AlertViewModel(AlarmTriggeredEventArgs trigger, PresentationMode mode, IAlarmScheduler scheduler)
     {
@@ -25,23 +25,23 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
         Trigger = trigger;
         Mode = mode;
 
-        var perfil = trigger.EffectiveProfile;
+        var profile = trigger.EffectiveProfile;
 
-        SnoozeOptions = [.. perfil.Snooze.Options.Select(d => new SnoozeOption(d, $"{d.TotalMinutes:0} min"))];
-        DismissPhrase = perfil.DismissPhrase ?? Loc.Get("Dismiss_DefaultPhrase");
-        DismissMode = perfil.Dismiss;
-        UrgencyName = Loc.UrgencyName(perfil.Level);
+        SnoozeOptions = [.. profile.Snooze.Options.Select(d => new SnoozeOption(d, $"{d.TotalMinutes:0} min"))];
+        DismissPhrase = profile.DismissPhrase ?? Loc.Get("Dismiss_DefaultPhrase");
+        DismissMode = profile.Dismiss;
+        UrgencyName = Loc.UrgencyName(profile.Level);
 
-        AccentBrush = Application.Current?.TryFindResource($"Brush.Urgency.{perfil.Level}") as Brush
+        AccentBrush = Application.Current?.TryFindResource($"Brush.Urgency.{profile.Level}") as Brush
                       ?? Brushes.OrangeRed;
 
         if (mode == PresentationMode.Fullscreen)
         {
             // Live clock, updated each second, for the full-screen overlay.
             NowText = DateTime.Now.ToString("HH:mm", Loc.Culture);
-            _relogio = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-            _relogio.Tick += (_, _) => NowText = DateTime.Now.ToString("HH:mm", Loc.Culture);
-            _relogio.Start();
+            _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _clockTimer.Tick += (_, _) => NowText = DateTime.Now.ToString("HH:mm", Loc.Culture);
+            _clockTimer.Start();
         }
     }
 
@@ -86,7 +86,7 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
     {
         get
         {
-            var hora = Trigger.ScheduledFor.ToLocalTime().ToString("HH:mm", Loc.Culture);
+            var time = Trigger.ScheduledFor.ToLocalTime().ToString("HH:mm", Loc.Culture);
 
             if (Trigger.Kind == TriggerKind.Escalation)
             {
@@ -95,19 +95,19 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
 
             if (Trigger.Kind == TriggerKind.Snooze)
             {
-                return Loc.Format("Alert_When_Snoozed", hora);
+                return Loc.Format("Alert_When_Snoozed", time);
             }
 
             if (!IsMissed)
             {
-                return Loc.Format("Alert_When_Scheduled", hora);
+                return Loc.Format("Alert_When_Scheduled", time);
             }
 
-            var texto = Loc.Format("Alert_When_Missed", hora, Humanizar(Trigger.Delay));
+            var text = Loc.Format("Alert_When_Missed", time, Humanize(Trigger.Delay));
 
             return Trigger.SkippedOccurrences > 0
-                ? Loc.Format("Alert_When_MissedExtra", texto, Trigger.SkippedOccurrences)
-                : texto;
+                ? Loc.Format("Alert_When_MissedExtra", text, Trigger.SkippedOccurrences)
+                : text;
         }
     }
 
@@ -141,37 +141,37 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void Snooze(SnoozeOption? option)
     {
-        var duracao = option?.Duration ?? Trigger.EffectiveProfile.Snooze.DefaultOption;
+        var duration = option?.Duration ?? Trigger.EffectiveProfile.Snooze.DefaultOption;
 
-        if (_scheduler.TrySnooze(Trigger.Alarm.Id, duracao, out var recusa))
+        if (_scheduler.TrySnooze(Trigger.Alarm.Id, duration, out var refusal))
         {
             CloseRequested?.Invoke();
             return;
         }
 
-        SnoozeRefusal = recusa;
+        SnoozeRefusal = refusal;
     }
 
     /// <summary>Formats a delay as a short human-readable span.</summary>
-    private static string Humanizar(TimeSpan intervalo)
+    private static string Humanize(TimeSpan span)
     {
-        if (intervalo.TotalMinutes < 1)
+        if (span.TotalMinutes < 1)
         {
             return Loc.Get("Dur_LessThanMinute");
         }
 
-        if (intervalo.TotalHours < 1)
+        if (span.TotalHours < 1)
         {
-            return Loc.Format("Dur_Min", (int)intervalo.TotalMinutes);
+            return Loc.Format("Dur_Min", (int)span.TotalMinutes);
         }
 
-        if (intervalo.TotalDays < 1)
+        if (span.TotalDays < 1)
         {
-            return Loc.Format("Dur_HourMin", intervalo.Hours, intervalo.Minutes);
+            return Loc.Format("Dur_HourMin", span.Hours, span.Minutes);
         }
 
-        return Loc.Format("Dur_Days", (int)intervalo.TotalDays);
+        return Loc.Format("Dur_Days", (int)span.TotalDays);
     }
 
-    public void Dispose() => _relogio?.Stop();
+    public void Dispose() => _clockTimer?.Stop();
 }

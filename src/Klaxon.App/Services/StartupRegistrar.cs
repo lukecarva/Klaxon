@@ -34,15 +34,15 @@ public sealed class StartupRegistrar(ILogger<StartupRegistrar> log)
 
         if (enabled)
         {
-            var caminho = ExecutablePath();
-            if (caminho is null)
+            var path = ExecutablePath();
+            if (path is null)
             {
                 _log.LogError("Não deu para descobrir o caminho do executável.");
                 return;
             }
 
             // --minimized: start straight to the tray.
-            key.SetValue(ValueName, $"\"{caminho}\" --minimized");
+            key.SetValue(ValueName, $"\"{path}\" --minimized");
             _log.LogInformation("Início automático ligado.");
         }
         else

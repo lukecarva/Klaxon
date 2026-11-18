@@ -93,10 +93,10 @@ public sealed partial class MainViewModel : ObservableObject
     {
         _log.LogDebug("Abrindo o editor para um alarme novo.");
 
-        var criado = _dialogs.Edit(null);
-        if (criado is not null)
+        var created = _dialogs.Edit(null);
+        if (created is not null)
         {
-            _alarms.AddOrUpdate(criado);
+            _alarms.AddOrUpdate(created);
         }
     }
 
@@ -109,10 +109,10 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
-        var editado = _dialogs.Edit(row.Alarm);
-        if (editado is not null)
+        var edited = _dialogs.Edit(row.Alarm);
+        if (edited is not null)
         {
-            _alarms.AddOrUpdate(editado);
+            _alarms.AddOrUpdate(edited);
         }
     }
 
@@ -134,14 +134,14 @@ public sealed partial class MainViewModel : ObservableObject
         Alarms.Clear();
 
         // The alarm list hides habits; they live in the "daily" tab.
-        var comuns = _alarms.Items
+        var regular = _alarms.Items
             .Where(a => a.HabitKey is null)
             .OrderBy(a => a.Title, StringComparer.CurrentCultureIgnoreCase);
 
-        foreach (var alarme in comuns)
+        foreach (var alarm in regular)
         {
-            var id = alarme.Id;
-            Alarms.Add(new AlarmRowViewModel(alarme, _clock, ligado => _alarms.SetEnabled(id, ligado)));
+            var id = alarm.Id;
+            Alarms.Add(new AlarmRowViewModel(alarm, _clock, enabled => _alarms.SetEnabled(id, enabled)));
         }
 
         RebuildHabits();
@@ -157,24 +157,24 @@ public sealed partial class MainViewModel : ObservableObject
 
         foreach (var def in HabitCatalog.All)
         {
-            var existente = _alarms.Items.FirstOrDefault(a => a.HabitKey == def.Key);
-            Habits.Add(new HabitRowViewModel(def, existente, ToggleHabit, SetHabitInterval));
+            var existing = _alarms.Items.FirstOrDefault(a => a.HabitKey == def.Key);
+            Habits.Add(new HabitRowViewModel(def, existing, ToggleHabit, SetHabitInterval));
         }
     }
 
     /// <summary>Creates or removes a habit's alarm when toggled.</summary>
     private void ToggleHabit(HabitDefinition def, bool active, int minutes)
     {
-        var existente = _alarms.Items.FirstOrDefault(a => a.HabitKey == def.Key);
+        var existing = _alarms.Items.FirstOrDefault(a => a.HabitKey == def.Key);
 
         if (active)
         {
-            _alarms.AddOrUpdate(HabitCatalog.BuildAlarm(def, minutes, _clock.Now, existente));
+            _alarms.AddOrUpdate(HabitCatalog.BuildAlarm(def, minutes, _clock.Now, existing));
             _log.LogInformation("Hábito {Habito} ativado (a cada {Min} min).", def.Key, minutes);
         }
-        else if (existente is not null)
+        else if (existing is not null)
         {
-            _alarms.Remove(existente.Id);
+            _alarms.Remove(existing.Id);
             _log.LogInformation("Hábito {Habito} desativado.", def.Key);
         }
     }
@@ -182,19 +182,19 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Updates an active habit's interval.</summary>
     private void SetHabitInterval(HabitDefinition def, int minutes)
     {
-        var existente = _alarms.Items.FirstOrDefault(a => a.HabitKey == def.Key);
-        if (existente is not null)
+        var existing = _alarms.Items.FirstOrDefault(a => a.HabitKey == def.Key);
+        if (existing is not null)
         {
-            _alarms.AddOrUpdate(HabitCatalog.BuildAlarm(def, minutes, _clock.Now, existente));
+            _alarms.AddOrUpdate(HabitCatalog.BuildAlarm(def, minutes, _clock.Now, existing));
         }
     }
 
     /// <summary>Refreshes every relative text and the subtitle.</summary>
     private void RefreshRelativeTexts()
     {
-        foreach (var linha in Alarms)
+        foreach (var row in Alarms)
         {
-            linha.RefreshNext();
+            row.RefreshNext();
         }
 
         NextAlarmSummary = DescribeNext();
@@ -203,13 +203,13 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Builds the "next alarm …" subtitle.</summary>
     private string DescribeNext()
     {
-        var proxima = _scheduler.NextFireTime;
+        var next = _scheduler.NextFireTime;
 
-        if (proxima is null)
+        if (next is null)
         {
             return Loc.Get(HasAlarms ? "Status_NoneActive" : "Status_NoneConfigured");
         }
 
-        return Loc.Format("Status_NextPrefix", TimeFormat.Relative(proxima.Value, _clock));
+        return Loc.Format("Status_NextPrefix", TimeFormat.Relative(next.Value, _clock));
     }
 }

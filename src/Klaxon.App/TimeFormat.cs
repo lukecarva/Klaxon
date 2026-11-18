@@ -10,30 +10,30 @@ public static class TimeFormat
     /// short date (with the year when in another year).</summary>
     public static string Relative(DateTimeOffset when, ISystemClock clock)
     {
-        var agora = clock.Now;
-        var falta = when - agora;
+        var now = clock.Now;
+        var remaining = when - now;
 
-        if (falta < TimeSpan.FromHours(1))
+        if (remaining < TimeSpan.FromHours(1))
         {
-            return Loc.Format("Rel_InMin", Math.Max(1, (int)falta.TotalMinutes));
+            return Loc.Format("Rel_InMin", Math.Max(1, (int)remaining.TotalMinutes));
         }
 
         var local = TimeZoneInfo.ConvertTime(when, clock.LocalTimeZone);
-        var hoje = TimeZoneInfo.ConvertTime(agora, clock.LocalTimeZone).Date;
-        var dia = local.Date;
-        var hora = local.ToString("HH:mm", Loc.Culture);
+        var today = TimeZoneInfo.ConvertTime(now, clock.LocalTimeZone).Date;
+        var day = local.Date;
+        var time = local.ToString("HH:mm", Loc.Culture);
 
-        if (dia == hoje)
+        if (day == today)
         {
-            return Loc.Format("Rel_Today", hora);
+            return Loc.Format("Rel_Today", time);
         }
 
-        if (dia == hoje.AddDays(1))
+        if (day == today.AddDays(1))
         {
-            return Loc.Format("Rel_Tomorrow", hora);
+            return Loc.Format("Rel_Tomorrow", time);
         }
 
-        var pattern = dia.Year == hoje.Year ? Loc.Get("Fmt_DateShort") : Loc.Get("Fmt_DateLong");
-        return $"{local.ToString(pattern, Loc.Culture)}, {hora}";
+        var pattern = day.Year == today.Year ? Loc.Get("Fmt_DateShort") : Loc.Get("Fmt_DateLong");
+        return $"{local.ToString(pattern, Loc.Culture)}, {time}";
     }
 }

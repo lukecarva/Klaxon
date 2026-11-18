@@ -8,54 +8,54 @@ public class HabitCatalogTests
     private static readonly DateTimeOffset Now = new(2026, 6, 10, 9, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Todos_os_habitos_tem_chave_unica()
+    public void All_habits_have_a_unique_key()
     {
-        var chaves = HabitCatalog.All.Select(h => h.Key).ToList();
-        Assert.Equal(chaves.Count, chaves.Distinct().Count());
+        var keys = HabitCatalog.All.Select(h => h.Key).ToList();
+        Assert.Equal(keys.Count, keys.Distinct().Count());
     }
 
     [Fact]
-    public void BuildAlarm_marca_a_chave_do_habito_e_e_por_intervalo()
+    public void BuildAlarm_marks_the_habit_key_and_is_interval_based()
     {
-        var agua = HabitCatalog.Find("water")!;
+        var water = HabitCatalog.Find("water")!;
 
-        var alarme = HabitCatalog.BuildAlarm(agua, 45, Now);
+        var alarm = HabitCatalog.BuildAlarm(water, 45, Now);
 
-        Assert.Equal("water", alarme.HabitKey);
-        Assert.Equal(agua.Urgency, alarme.Urgency);
-        Assert.Equal(HabitCatalog.SkipIfIdleFor, alarme.SkipIfIdleFor);
+        Assert.Equal("water", alarm.HabitKey);
+        Assert.Equal(water.Urgency, alarm.Urgency);
+        Assert.Equal(HabitCatalog.SkipIfIdleFor, alarm.SkipIfIdleFor);
 
-        var agenda = Assert.IsType<IntervalSchedule>(alarme.Schedule);
-        Assert.Equal(TimeSpan.FromMinutes(45), agenda.Every);
-        Assert.Equal(HabitCatalog.WindowFrom, agenda.ActiveFrom);
-        Assert.Equal(HabitCatalog.WindowTo, agenda.ActiveTo);
+        var schedule = Assert.IsType<IntervalSchedule>(alarm.Schedule);
+        Assert.Equal(TimeSpan.FromMinutes(45), schedule.Every);
+        Assert.Equal(HabitCatalog.WindowFrom, schedule.ActiveFrom);
+        Assert.Equal(HabitCatalog.WindowTo, schedule.ActiveTo);
     }
 
     [Fact]
-    public void Ajustar_so_o_intervalo_reinicia_o_ciclo_mas_mantem_o_Id()
+    public void Changing_only_the_interval_resets_the_cycle_but_keeps_the_Id()
     {
-        var agua = HabitCatalog.Find("water")!;
-        var original = HabitCatalog.BuildAlarm(agua, 45, Now);
-        var ancora = ((IntervalSchedule)original.Schedule).Anchor;
+        var water = HabitCatalog.Find("water")!;
+        var original = HabitCatalog.BuildAlarm(water, 45, Now);
+        var anchor = ((IntervalSchedule)original.Schedule).Anchor;
 
-        var maisTarde = Now.AddHours(3);
-        var ajustado = HabitCatalog.BuildAlarm(agua, 30, maisTarde, original);
+        var later = Now.AddHours(3);
+        var adjusted = HabitCatalog.BuildAlarm(water, 30, later, original);
 
         // Updates in place (same Id), but changing the interval resets the anchor.
-        Assert.Equal(original.Id, ajustado.Id);
-        Assert.Equal(TimeSpan.FromMinutes(30), ((IntervalSchedule)ajustado.Schedule).Every);
-        Assert.NotEqual(ancora, ((IntervalSchedule)ajustado.Schedule).Anchor);
+        Assert.Equal(original.Id, adjusted.Id);
+        Assert.Equal(TimeSpan.FromMinutes(30), ((IntervalSchedule)adjusted.Schedule).Every);
+        Assert.NotEqual(anchor, ((IntervalSchedule)adjusted.Schedule).Anchor);
     }
 
     [Fact]
-    public void Reconstruir_com_o_mesmo_intervalo_preserva_a_ancora()
+    public void Rebuilding_with_the_same_interval_preserves_the_anchor()
     {
-        var agua = HabitCatalog.Find("water")!;
-        var original = HabitCatalog.BuildAlarm(agua, 45, Now);
-        var ancora = ((IntervalSchedule)original.Schedule).Anchor;
+        var water = HabitCatalog.Find("water")!;
+        var original = HabitCatalog.BuildAlarm(water, 45, Now);
+        var anchor = ((IntervalSchedule)original.Schedule).Anchor;
 
-        var depois = HabitCatalog.BuildAlarm(agua, 45, Now.AddHours(3), original);
+        var rebuilt = HabitCatalog.BuildAlarm(water, 45, Now.AddHours(3), original);
 
-        Assert.Equal(ancora, ((IntervalSchedule)depois.Schedule).Anchor);
+        Assert.Equal(anchor, ((IntervalSchedule)rebuilt.Schedule).Anchor);
     }
 }

@@ -6,17 +6,17 @@ namespace Klaxon.Core.Tests;
 public class SystemClockTests
 {
     [Fact]
-    public void SystemClock_Now_esta_proximo_do_relogio_real()
+    public void SystemClock_Now_is_close_to_the_real_clock()
     {
         ISystemClock clock = new SystemClock();
 
-        var diferenca = (clock.Now - DateTimeOffset.Now).Duration();
+        var difference = (clock.Now - DateTimeOffset.Now).Duration();
 
-        Assert.True(diferenca < TimeSpan.FromSeconds(1), $"Diferença inesperada: {diferenca}.");
+        Assert.True(difference < TimeSpan.FromSeconds(1), $"Unexpected difference: {difference}.");
     }
 
     [Fact]
-    public void SystemClock_Now_carrega_o_offset_local()
+    public void SystemClock_Now_carries_the_local_offset()
     {
         ISystemClock clock = new SystemClock();
 
@@ -24,18 +24,18 @@ public class SystemClockTests
     }
 
     [Fact]
-    public void FakeClock_avanca_exatamente_o_pedido()
+    public void FakeClock_advances_exactly_as_asked()
     {
-        var inicio = new DateTimeOffset(2026, 3, 14, 7, 0, 0, TimeSpan.Zero);
-        var clock = new FakeClock(inicio);
+        var start = new DateTimeOffset(2026, 3, 14, 7, 0, 0, TimeSpan.Zero);
+        var clock = new FakeClock(start);
 
         clock.Advance(TimeSpan.FromMinutes(90));
 
-        Assert.Equal(inicio.AddMinutes(90), clock.Now);
+        Assert.Equal(start.AddMinutes(90), clock.Now);
     }
 
     [Fact]
-    public void FakeClock_recusa_avanco_negativo()
+    public void FakeClock_rejects_a_negative_advance()
     {
         var clock = new FakeClock(DateTimeOffset.UnixEpoch);
 
@@ -43,13 +43,13 @@ public class SystemClockTests
     }
 
     [Fact]
-    public void FakeClock_permite_voltar_no_tempo_via_SetTo()
+    public void FakeClock_allows_going_back_in_time_via_SetTo()
     {
-        var inicio = new DateTimeOffset(2026, 3, 14, 7, 0, 0, TimeSpan.Zero);
-        var clock = new FakeClock(inicio);
+        var start = new DateTimeOffset(2026, 3, 14, 7, 0, 0, TimeSpan.Zero);
+        var clock = new FakeClock(start);
 
-        clock.SetTo(inicio.AddHours(-2));
+        clock.SetTo(start.AddHours(-2));
 
-        Assert.Equal(inicio.AddHours(-2), clock.Now);
+        Assert.Equal(start.AddHours(-2), clock.Now);
     }
 }

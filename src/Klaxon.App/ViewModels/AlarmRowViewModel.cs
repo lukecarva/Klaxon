@@ -14,7 +14,7 @@ public sealed partial class AlarmRowViewModel : ObservableObject
     private readonly Action<bool> _onToggled;
 
     // Guards the toggle callback during the initial load of IsEnabled.
-    private readonly bool _suprimirCallback;
+    private readonly bool _suppressCallback;
 
     public AlarmRowViewModel(Alarm alarm, ISystemClock clock, Action<bool> onToggled)
     {
@@ -22,9 +22,9 @@ public sealed partial class AlarmRowViewModel : ObservableObject
         _clock = clock;
         _onToggled = onToggled;
 
-        _suprimirCallback = true;
+        _suppressCallback = true;
         IsEnabled = alarm.IsEnabled;
-        _suprimirCallback = false;
+        _suppressCallback = false;
 
         AccentBrush = Application.Current?.TryFindResource($"Brush.Urgency.{alarm.Urgency}") as Brush
                       ?? Brushes.Gray;
@@ -51,7 +51,7 @@ public sealed partial class AlarmRowViewModel : ObservableObject
 
     partial void OnIsEnabledChanged(bool value)
     {
-        if (!_suprimirCallback)
+        if (!_suppressCallback)
         {
             _onToggled(value);
         }
@@ -67,11 +67,11 @@ public sealed partial class AlarmRowViewModel : ObservableObject
                 return Loc.Get("Row_Off");
             }
 
-            var proxima = Alarm.Schedule.NextOccurrenceAfter(_clock.Now, _clock.LocalTimeZone);
+            var next = Alarm.Schedule.NextOccurrenceAfter(_clock.Now, _clock.LocalTimeZone);
 
-            return proxima is null
+            return next is null
                 ? Loc.Get("Row_NoNext")
-                : TimeFormat.Relative(proxima.Value, _clock);
+                : TimeFormat.Relative(next.Value, _clock);
         }
     }
 

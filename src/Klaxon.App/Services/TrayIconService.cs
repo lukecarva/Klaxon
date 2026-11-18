@@ -26,11 +26,11 @@ public sealed class TrayIconService(IServiceProvider services, ILogger<TrayIconS
             return;
         }
 
-        var abrir = new MenuItem { Header = Loc.Get("Tray_Open") };
-        abrir.Click += (_, _) => ShowMainWindow();
+        var open = new MenuItem { Header = Loc.Get("Tray_Open") };
+        open.Click += (_, _) => ShowMainWindow();
 
-        var sair = new MenuItem { Header = Loc.Get("Tray_Exit") };
-        sair.Click += (_, _) =>
+        var exit = new MenuItem { Header = Loc.Get("Tray_Exit") };
+        exit.Click += (_, _) =>
         {
             _log.LogInformation("Encerramento solicitado pelo menu da bandeja.");
             Application.Current.Shutdown();
@@ -42,7 +42,7 @@ public sealed class TrayIconService(IServiceProvider services, ILogger<TrayIconS
             ToolTipText = Loc.Get("App_Name"),
             ContextMenu = new ContextMenu
             {
-                Items = { abrir, new Separator(), sair },
+                Items = { open, new Separator(), exit },
             },
         };
 

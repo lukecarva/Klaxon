@@ -9,8 +9,8 @@ public sealed class NullToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var vazio = value is null || (value is string texto && string.IsNullOrWhiteSpace(texto));
-        return vazio ? Visibility.Collapsed : Visibility.Visible;
+        var empty = value is null || (value is string text && string.IsNullOrWhiteSpace(text));
+        return empty ? Visibility.Collapsed : Visibility.Visible;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>

@@ -45,16 +45,16 @@ public sealed class JsonSchedulerStateStore : ISchedulerStateStore
         catch (Exception ex) when (ex is JsonException or NotSupportedException)
         {
             // Move the unreadable file aside instead of overwriting it.
-            var quarentena = $"{_path}.corrompido-{DateTime.Now:yyyyMMdd-HHmmss}";
+            var quarantine = $"{_path}.corrompido-{DateTime.Now:yyyyMMdd-HHmmss}";
 
             _log.LogError(
                 ex,
                 "scheduler-state.json ilegível. Movendo para {Quarentena} e começando vazio.",
-                quarentena);
+                quarantine);
 
             try
             {
-                File.Move(_path, quarentena);
+                File.Move(_path, quarantine);
             }
             catch (IOException moveEx)
             {
@@ -70,10 +70,10 @@ public sealed class JsonSchedulerStateStore : ISchedulerStateStore
     {
         var json = JsonSerializer.Serialize(state, JsonAlarmStore.SerializerOptions);
 
-        var pasta = Path.GetDirectoryName(_path);
-        if (!string.IsNullOrEmpty(pasta))
+        var folder = Path.GetDirectoryName(_path);
+        if (!string.IsNullOrEmpty(folder))
         {
-            Directory.CreateDirectory(pasta);
+            Directory.CreateDirectory(folder);
         }
 
         var temp = _path + ".tmp";

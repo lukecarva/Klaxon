@@ -20,10 +20,10 @@ public class AlarmEditorViewModelTests
     /// <summary>Runs Save and returns the built alarm, or a validation error.</summary>
     private static (Alarm? Result, string? Error) Save(AlarmEditorViewModel vm)
     {
-        string? erro = null;
-        vm.ValidationFailed += m => erro = m;
+        string? error = null;
+        vm.ValidationFailed += m => error = m;
         vm.SaveCommand.Execute(null);
-        return (vm.Result, erro);
+        return (vm.Result, error);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class AlarmEditorViewModelTests
         vm.Title = "Consulta";
         vm.IsOnce = true;
         vm.DateText = "06/10/2026"; // MM/dd/yyyy (English)
-        vm.TimeText = "08:00";      // antes das 09:00 de agora
+        vm.TimeText = "08:00";      // before the current 09:00
 
         var (result, _) = Save(vm);
 
@@ -212,14 +212,14 @@ public class AlarmEditorViewModelTests
     [Fact]
     public void Editing_keeps_the_same_id()
     {
-        var existente = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var vm = New(Clock(), existente);
+        var existing = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var vm = New(Clock(), existing);
         vm.Title = "Reunião editada";
 
         var (result, error) = Save(vm);
 
         Assert.Null(error);
-        Assert.Equal(existente.Id, result!.Id);
+        Assert.Equal(existing.Id, result!.Id);
         Assert.False(vm.IsNew);
     }
 }

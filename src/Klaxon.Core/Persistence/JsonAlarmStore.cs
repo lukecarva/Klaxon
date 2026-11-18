@@ -54,16 +54,16 @@ public sealed class JsonAlarmStore : IAlarmStore
         catch (Exception ex) when (ex is JsonException or NotSupportedException)
         {
             // Move the unreadable file aside instead of overwriting it.
-            var quarentena = $"{_path}.corrompido-{DateTime.Now:yyyyMMdd-HHmmss}";
+            var quarantine = $"{_path}.corrompido-{DateTime.Now:yyyyMMdd-HHmmss}";
 
             _log.LogError(
                 ex,
                 "alarms.json ilegível. Movendo para {Quarentena} e começando vazio.",
-                quarentena);
+                quarantine);
 
             try
             {
-                File.Move(_path, quarentena);
+                File.Move(_path, quarantine);
             }
             catch (IOException moveEx)
             {
@@ -77,13 +77,13 @@ public sealed class JsonAlarmStore : IAlarmStore
     /// <summary>Writes the alarms atomically (temp file + replace with backup).</summary>
     public void Save(IEnumerable<Alarm> alarms)
     {
-        var lista = alarms.ToList();
-        var json = JsonSerializer.Serialize(lista, SerializerOptions);
+        var list = alarms.ToList();
+        var json = JsonSerializer.Serialize(list, SerializerOptions);
 
-        var pasta = Path.GetDirectoryName(_path);
-        if (!string.IsNullOrEmpty(pasta))
+        var folder = Path.GetDirectoryName(_path);
+        if (!string.IsNullOrEmpty(folder))
         {
-            Directory.CreateDirectory(pasta);
+            Directory.CreateDirectory(folder);
         }
 
         var temp = _path + ".tmp";
@@ -98,6 +98,6 @@ public sealed class JsonAlarmStore : IAlarmStore
             File.Move(temp, _path);
         }
 
-        _log.LogDebug("{Quantidade} alarme(s) salvos em {Caminho}.", lista.Count, _path);
+        _log.LogDebug("{Quantidade} alarme(s) salvos em {Caminho}.", list.Count, _path);
     }
 }

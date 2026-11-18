@@ -32,7 +32,7 @@ public sealed class SchedulerHost(
 
     private DispatcherTimer? _timer;
     private bool _hooked;
-    private string? _ultimoStatus;
+    private string? _lastStatus;
 
     /// <summary>Loads alarms, starts the tick, and hooks system events.</summary>
     public Task StartAsync(CancellationToken cancellationToken)
@@ -57,11 +57,11 @@ public sealed class SchedulerHost(
         _timer.Tick += (_, _) =>
         {
             _scheduler.Tick();
-            AtualizarStatusDaBandeja();
+            UpdateTrayStatus();
         };
 
         _timer.Start();
-        AtualizarStatusDaBandeja();
+        UpdateTrayStatus();
 
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
         SystemEvents.TimeChanged += OnTimeChanged;
@@ -86,7 +86,7 @@ public sealed class SchedulerHost(
     private void OnAlarmsChanged(object? sender, EventArgs e)
     {
         _scheduler.Reload(_alarms.Items);
-        AtualizarStatusDaBandeja();
+        UpdateTrayStatus();
     }
 
     /// <summary>Shows the alert for a fired alarm.</summary>
@@ -109,21 +109,21 @@ public sealed class SchedulerHost(
     }
 
     /// <summary>Updates the tray tooltip only when the text actually changes.</summary>
-    private void AtualizarStatusDaBandeja()
+    private void UpdateTrayStatus()
     {
-        var proxima = _scheduler.NextFireTime;
+        var next = _scheduler.NextFireTime;
 
-        var texto = proxima is null
+        var text = next is null
             ? Loc.Format("Tray_Idle", Loc.Get("App_Name"))
-            : Loc.Format("Status_NextPrefix", TimeFormat.Relative(proxima.Value, _clock));
+            : Loc.Format("Status_NextPrefix", TimeFormat.Relative(next.Value, _clock));
 
-        if (texto == _ultimoStatus)
+        if (text == _lastStatus)
         {
             return;
         }
 
-        _ultimoStatus = texto;
-        _tray.SetStatus(texto);
+        _lastStatus = text;
+        _tray.SetStatus(text);
     }
 
     /// <summary>On resume, ticks so catch-up runs for what came due while asleep.</summary>

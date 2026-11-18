@@ -23,28 +23,28 @@ public sealed class WpfAlertPresenter(
     private readonly ILogger<WpfAlertPresenter> _log = log;
 
     /// <summary>On-screen alerts by alarm; prevents two alerts for one alarm.</summary>
-    private readonly Dictionary<Guid, AlertSession> _abertos = [];
+    private readonly Dictionary<Guid, AlertSession> _openAlerts = [];
 
     /// <summary>Open corner cards, bottom-most first, kept stacked without overlap.</summary>
-    private readonly List<AlertWindow> _cantos = [];
+    private readonly List<AlertWindow> _cornerCards = [];
 
     /// <summary>Presents a triggered alarm (skips, toast, window or escalation).</summary>
     public void Show(AlarmTriggeredEventArgs trigger)
     {
-        if (ShouldSkipForAbsence(trigger, out var ocioso))
+        if (ShouldSkipForAbsence(trigger, out var idleFor))
         {
             _log.LogInformation(
                 "Alarme {Titulo} pulado: teclado e mouse parados há {Ocioso}.",
                 trigger.Alarm.Title,
-                ocioso);
+                idleFor);
 
             _scheduler.Dismiss(trigger.Alarm.Id);
             return;
         }
 
-        var resolvido = Resolve(trigger);
+        var resolved = Resolve(trigger);
 
-        if (resolvido is null)
+        if (resolved is null)
         {
             _log.LogInformation(
                 "Alarme {Titulo} perdido e descartado conforme o nível {Nivel}.",
@@ -54,9 +54,9 @@ public sealed class WpfAlertPresenter(
             return;
         }
 
-        var (modo, som) = resolvido.Value;
+        var (mode, sound) = resolved.Value;
 
-        if (_abertos.TryGetValue(trigger.Alarm.Id, out var existente))
+        if (_openAlerts.TryGetValue(trigger.Alarm.Id, out var existing))
         {
             if (trigger.Kind != TriggerKind.Escalation)
             {
@@ -66,63 +66,63 @@ public sealed class WpfAlertPresenter(
 
             // Escalation replaces the current window with a more intrusive one.
             _log.LogInformation("Alerta de {Titulo} substituído pela versão escalada.", trigger.Alarm.Title);
-            existente.Window.Close();
+            existing.Window.Close();
         }
 
         _log.LogInformation(
             "Alerta: {Titulo} [{Nivel}/{Modo}] motivo={Motivo}.",
             trigger.Alarm.Title,
             trigger.EffectiveUrgency,
-            modo.ToString(),
+            mode.ToString(),
             trigger.Kind.ToString());
 
-        if (modo == PresentationMode.Toast)
+        if (mode == PresentationMode.Toast)
         {
             _tray.ShowBalloon(trigger.Alarm.Title, trigger.Alarm.Message ?? trigger.Alarm.Schedule.Describe());
             _scheduler.Dismiss(trigger.Alarm.Id);
             return;
         }
 
-        MostrarJanela(trigger, modo, som);
+        ShowWindow(trigger, mode, sound);
     }
 
     /// <summary>Opens the alert window and starts its sound.</summary>
-    private void MostrarJanela(AlarmTriggeredEventArgs trigger, PresentationMode modo, SoundSpec som)
+    private void ShowWindow(AlarmTriggeredEventArgs trigger, PresentationMode mode, SoundSpec sound)
     {
-        var viewModel = new AlertViewModel(trigger, modo, _scheduler);
-        var janela = new AlertWindow(viewModel);
-        var sessao = new AlertSession(janela, new AlarmAudioPlayer(_log));
+        var viewModel = new AlertViewModel(trigger, mode, _scheduler);
+        var window = new AlertWindow(viewModel);
+        var session = new AlertSession(window, new AlarmAudioPlayer(_log));
 
-        _abertos[trigger.Alarm.Id] = sessao;
-        janela.Closed += (_, _) => Encerrar(trigger.Alarm.Id);
+        _openAlerts[trigger.Alarm.Id] = session;
+        window.Closed += (_, _) => CloseSession(trigger.Alarm.Id);
 
-        if (modo == PresentationMode.Fullscreen)
+        if (mode == PresentationMode.Fullscreen)
         {
-            AbrirEmTelaCheia(janela, viewModel, sessao);
+            ShowFullscreen(window, viewModel, session);
         }
         else
         {
             // The content sizes the card; a fixed height would clip the buttons.
-            janela.SizeToContent = SizeToContent.WidthAndHeight;
-            janela.MinWidth = 380;
-            janela.MaxWidth = 460;
+            window.SizeToContent = SizeToContent.WidthAndHeight;
+            window.MinWidth = 380;
+            window.MaxWidth = 460;
 
-            janela.WindowStartupLocation = modo == PresentationMode.Modal
+            window.WindowStartupLocation = mode == PresentationMode.Modal
                 ? WindowStartupLocation.CenterScreen
                 : WindowStartupLocation.Manual;
 
-            janela.ShowActivated = modo != PresentationMode.Corner;
-            janela.Show();
+            window.ShowActivated = mode != PresentationMode.Corner;
+            window.Show();
 
-            if (modo == PresentationMode.Corner)
+            if (mode == PresentationMode.Corner)
             {
                 // Stack above any card already in the corner instead of covering it.
-                _cantos.Add(janela);
+                _cornerCards.Add(window);
                 RestackCorners();
             }
         }
 
-        sessao.Audio.Play(som);
+        session.Audio.Play(sound);
     }
 
     /// <summary>Lays the open corner cards out upward from the bottom, without overlap.</summary>
@@ -131,7 +131,7 @@ public sealed class WpfAlertPresenter(
         const int gap = 8;
         var offset = 0;
 
-        foreach (var card in _cantos)
+        foreach (var card in _cornerCards)
         {
             card.UpdateLayout();
             Win32Windows.PlaceInCorner(card, offset);
@@ -140,77 +140,77 @@ public sealed class WpfAlertPresenter(
     }
 
     /// <summary>Covers every monitor: main window plus one overlay per extra screen.</summary>
-    private static void AbrirEmTelaCheia(AlertWindow janela, AlertViewModel viewModel, AlertSession sessao)
+    private static void ShowFullscreen(AlertWindow window, AlertViewModel viewModel, AlertSession session)
     {
-        var telas = System.Windows.Forms.Screen.AllScreens;
-        var principal = System.Windows.Forms.Screen.PrimaryScreen ?? telas[0];
+        var screens = System.Windows.Forms.Screen.AllScreens;
+        var primary = System.Windows.Forms.Screen.PrimaryScreen ?? screens[0];
 
-        janela.Show();
-        Win32Windows.PlacePhysical(janela, principal.Bounds, activate: true);
+        window.Show();
+        Win32Windows.PlacePhysical(window, primary.Bounds, activate: true);
 
-        foreach (var tela in telas.Where(t => !t.Equals(principal)))
+        foreach (var screen in screens.Where(t => !t.Equals(primary)))
         {
             var overlay = new OverlayWindow(viewModel);
             overlay.Show();
-            Win32Windows.PlacePhysical(overlay, tela.Bounds, activate: false);
-            sessao.Overlays.Add(overlay);
+            Win32Windows.PlacePhysical(overlay, screen.Bounds, activate: false);
+            session.Overlays.Add(overlay);
         }
     }
 
     /// <summary>Whether to skip an on-time alert because the user is away.</summary>
-    private bool ShouldSkipForAbsence(AlarmTriggeredEventArgs trigger, out TimeSpan ocioso)
+    private bool ShouldSkipForAbsence(AlarmTriggeredEventArgs trigger, out TimeSpan idleFor)
     {
-        ocioso = TimeSpan.Zero;
+        idleFor = TimeSpan.Zero;
 
-        if (trigger.Kind != TriggerKind.OnTime || trigger.Alarm.SkipIfIdleFor is not { } limite)
+        if (trigger.Kind != TriggerKind.OnTime || trigger.Alarm.SkipIfIdleFor is not { } limit)
         {
             return false;
         }
 
-        ocioso = _idle.IdleFor;
-        return ocioso >= limite;
+        idleFor = _idle.IdleFor;
+        return idleFor >= limit;
     }
 
     /// <summary>Resolves how to show now, downgrading missed alarms per policy.</summary>
     private static (PresentationMode Mode, SoundSpec Sound)? Resolve(AlarmTriggeredEventArgs trigger)
     {
-        var perfil = trigger.EffectiveProfile;
+        var profile = trigger.EffectiveProfile;
 
         if (trigger.Kind != TriggerKind.Missed)
         {
-            return (perfil.Presentation, trigger.EffectiveSound);
+            return (profile.Presentation, trigger.EffectiveSound);
         }
 
-        return perfil.WhenAway switch
+        return profile.WhenAway switch
         {
             MissedAlarmBehavior.Discard => null,
 
             // A missed alarm returns as a silent corner card.
             MissedAlarmBehavior.ShowOnReturn => (PresentationMode.Corner, SoundSpec.Silent),
 
-            MissedAlarmBehavior.FireOnReturn => (perfil.Presentation, trigger.EffectiveSound),
+            MissedAlarmBehavior.FireOnReturn => (profile.Presentation, trigger.EffectiveSound),
 
             _ => null,
         };
     }
 
     /// <summary>Closes an alert session: stops sound and closes overlays.</summary>
-    private void Encerrar(Guid alarmId)
+    private void CloseSession(Guid alarmId)
     {
-        if (!_abertos.Remove(alarmId, out var sessao))
+        if (!_openAlerts.Remove(alarmId, out var session))
         {
             return;
         }
 
-        sessao.Audio.Dispose();
+        session.Audio.Dispose();
 
-        foreach (var overlay in sessao.Overlays)
+        foreach (var overlay in session.Overlays)
         {
             overlay.Close();
         }
 
         // Reflow the remaining corner cards so no gap is left behind.
-        if (_cantos.Remove(sessao.Window))
+        if (_cornerCards.Remove(session.Window))
         {
             RestackCorners();
         }

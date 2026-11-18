@@ -30,10 +30,10 @@ public sealed class Win32IdleDetector : IIdleDetector
             }
 
             // uint subtraction stays correct across the 32-bit tick wraparound.
-            var agora = (uint)Environment.TickCount;
-            var decorrido = agora - info.dwTime;
+            var now = (uint)Environment.TickCount;
+            var elapsed = now - info.dwTime;
 
-            return TimeSpan.FromMilliseconds(decorrido);
+            return TimeSpan.FromMilliseconds(elapsed);
         }
     }
 }

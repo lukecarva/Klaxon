@@ -87,13 +87,13 @@ public partial class App : Application
 
         _host.Start();
 
-        var janela = _host.Services.GetRequiredService<MainWindowView>();
-        MainWindow = janela;
+        var window = _host.Services.GetRequiredService<MainWindowView>();
+        MainWindow = window;
 
         // --minimized: start hidden in the tray.
         if (!e.Args.Contains("--minimized", StringComparer.OrdinalIgnoreCase))
         {
-            janela.Show();
+            window.Show();
         }
     }
 
@@ -139,13 +139,13 @@ public partial class App : Application
     {
         var settings = SettingsStore.Load();
 
-        var idioma = settings.Language is { Length: > 0 } code
+        var language = settings.Language is { Length: > 0 } code
             ? Loc.Parse(code)
             : CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "pt"
                 ? AppLanguage.Portuguese
                 : AppLanguage.English;
 
-        Loc.Set(idioma);
+        Loc.Set(language);
 
         CultureInfo.CurrentCulture = Loc.Culture;
         CultureInfo.CurrentUICulture = Loc.Culture;

@@ -46,9 +46,9 @@ public class MainViewModelHabitTests
 
         Water(vm).IsActive = true;
 
-        var alarme = Assert.Single(alarms.Items);
-        Assert.Equal("water", alarme.HabitKey);
-        Assert.IsType<IntervalSchedule>(alarme.Schedule);
+        var alarm = Assert.Single(alarms.Items);
+        Assert.Equal("water", alarm.HabitKey);
+        Assert.IsType<IntervalSchedule>(alarm.Schedule);
         Assert.True(Water(vm).IsActive);
     }
 
@@ -72,8 +72,8 @@ public class MainViewModelHabitTests
 
         Water(vm).IntervalText = "30";
 
-        var agenda = Assert.IsType<IntervalSchedule>(alarms.Items.Single().Schedule);
-        Assert.Equal(TimeSpan.FromMinutes(30), agenda.Every);
+        var schedule = Assert.IsType<IntervalSchedule>(alarms.Items.Single().Schedule);
+        Assert.Equal(TimeSpan.FromMinutes(30), schedule.Every);
     }
 
     [Fact]

@@ -6,148 +6,148 @@ public class IntervalScheduleTests
 {
     private static readonly TimeZoneInfo Dst = TestZones.SouthernDst;
 
-    private static DateTimeOffset Em(int ano, int mes, int dia, int hora, int min, int offsetHoras) =>
-        new(ano, mes, dia, hora, min, 0, TimeSpan.FromHours(offsetHoras));
+    private static DateTimeOffset At(int year, int month, int day, int hour, int min, int offsetHours) =>
+        new(year, month, day, hour, min, 0, TimeSpan.FromHours(offsetHours));
 
     // ---------- No time range
 
     [Fact]
-    public void Sem_faixa_dispara_a_cada_intervalo_a_partir_da_ancora()
+    public void Without_window_fires_each_interval_from_the_anchor()
     {
-        var ancora = Em(2026, 6, 10, 9, 0, -3);
-        var agenda = new IntervalSchedule(TimeSpan.FromMinutes(45), ancora);
+        var anchor = At(2026, 6, 10, 9, 0, -3);
+        var schedule = new IntervalSchedule(TimeSpan.FromMinutes(45), anchor);
 
-        var proxima = agenda.NextOccurrenceAfter(ancora, Dst);
+        var next = schedule.NextOccurrenceAfter(anchor, Dst);
 
-        Assert.Equal(Em(2026, 6, 10, 9, 45, -3), proxima);
+        Assert.Equal(At(2026, 6, 10, 9, 45, -3), next);
     }
 
     [Fact]
-    public void Mantem_o_ritmo_mesmo_consultando_no_meio_de_um_ciclo()
+    public void Keeps_the_rhythm_even_when_queried_mid_cycle()
     {
         // Asking mid-cycle at 10:00 returns the original grid point (10:30).
-        var ancora = Em(2026, 6, 10, 9, 0, -3);
-        var agenda = new IntervalSchedule(TimeSpan.FromMinutes(45), ancora);
+        var anchor = At(2026, 6, 10, 9, 0, -3);
+        var schedule = new IntervalSchedule(TimeSpan.FromMinutes(45), anchor);
 
-        var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 10, 10, 0, -3), Dst);
+        var next = schedule.NextOccurrenceAfter(At(2026, 6, 10, 10, 0, -3), Dst);
 
-        Assert.Equal(Em(2026, 6, 10, 10, 30, -3), proxima);
+        Assert.Equal(At(2026, 6, 10, 10, 30, -3), next);
     }
 
     [Fact]
-    public void Funciona_para_instantes_anteriores_a_ancora()
+    public void Works_for_instants_before_the_anchor()
     {
-        var ancora = Em(2026, 6, 10, 9, 0, -3);
-        var agenda = new IntervalSchedule(TimeSpan.FromHours(1), ancora);
+        var anchor = At(2026, 6, 10, 9, 0, -3);
+        var schedule = new IntervalSchedule(TimeSpan.FromHours(1), anchor);
 
-        var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 10, 6, 30, -3), Dst);
+        var next = schedule.NextOccurrenceAfter(At(2026, 6, 10, 6, 30, -3), Dst);
 
-        Assert.Equal(Em(2026, 6, 10, 7, 0, -3), proxima);
+        Assert.Equal(At(2026, 6, 10, 7, 0, -3), next);
     }
 
     [Fact]
-    public void Intervalo_zero_nao_agenda_nada()
+    public void Zero_interval_schedules_nothing()
     {
-        var agenda = new IntervalSchedule(TimeSpan.Zero, Em(2026, 6, 10, 9, 0, -3));
+        var schedule = new IntervalSchedule(TimeSpan.Zero, At(2026, 6, 10, 9, 0, -3));
 
-        Assert.Null(agenda.NextOccurrenceAfter(Em(2026, 6, 10, 9, 0, -3), Dst));
+        Assert.Null(schedule.NextOccurrenceAfter(At(2026, 6, 10, 9, 0, -3), Dst));
     }
 
     // ---------- Time range
 
     [Fact]
-    public void Antes_da_abertura_espera_a_faixa_comecar()
+    public void Before_opening_waits_for_the_window_to_start()
     {
-        var ancora = Em(2026, 6, 10, 9, 0, -3);
-        var agenda = new IntervalSchedule(
+        var anchor = At(2026, 6, 10, 9, 0, -3);
+        var schedule = new IntervalSchedule(
             TimeSpan.FromMinutes(45),
-            ancora,
+            anchor,
             new TimeOnly(9, 0),
             new TimeOnly(18, 0));
 
-        var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 10, 6, 0, -3), Dst);
+        var next = schedule.NextOccurrenceAfter(At(2026, 6, 10, 6, 0, -3), Dst);
 
-        Assert.Equal(Em(2026, 6, 10, 9, 0, -3), proxima);
+        Assert.Equal(At(2026, 6, 10, 9, 0, -3), next);
     }
 
     [Fact]
-    public void Depois_do_fechamento_pula_para_a_abertura_do_dia_seguinte()
+    public void After_closing_jumps_to_next_days_opening()
     {
         // The reminder should not fire at 3am.
-        var ancora = Em(2026, 6, 10, 9, 0, -3);
-        var agenda = new IntervalSchedule(
+        var anchor = At(2026, 6, 10, 9, 0, -3);
+        var schedule = new IntervalSchedule(
             TimeSpan.FromMinutes(45),
-            ancora,
+            anchor,
             new TimeOnly(9, 0),
             new TimeOnly(18, 0));
 
-        var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 10, 17, 50, -3), Dst);
+        var next = schedule.NextOccurrenceAfter(At(2026, 6, 10, 17, 50, -3), Dst);
 
-        Assert.Equal(Em(2026, 6, 11, 9, 0, -3), proxima);
+        Assert.Equal(At(2026, 6, 11, 9, 0, -3), next);
     }
 
     [Fact]
-    public void O_fim_da_faixa_e_exclusivo()
+    public void The_window_end_is_exclusive()
     {
-        var ancora = Em(2026, 6, 10, 9, 0, -3);
-        var agenda = new IntervalSchedule(
+        var anchor = At(2026, 6, 10, 9, 0, -3);
+        var schedule = new IntervalSchedule(
             TimeSpan.FromHours(1),
-            ancora,
+            anchor,
             new TimeOnly(9, 0),
             new TimeOnly(18, 0));
 
         // 18:00 sharp is already out; the last firing of the day is 17:00.
-        var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 10, 17, 0, -3), Dst);
+        var next = schedule.NextOccurrenceAfter(At(2026, 6, 10, 17, 0, -3), Dst);
 
-        Assert.Equal(Em(2026, 6, 11, 9, 0, -3), proxima);
+        Assert.Equal(At(2026, 6, 11, 9, 0, -3), next);
     }
 
     [Fact]
-    public void Faixa_que_atravessa_a_meia_noite_continua_valendo_depois_das_00h()
+    public void Window_crossing_midnight_still_applies_after_midnight()
     {
-        var ancora = Em(2026, 6, 10, 22, 0, -3);
-        var agenda = new IntervalSchedule(
+        var anchor = At(2026, 6, 10, 22, 0, -3);
+        var schedule = new IntervalSchedule(
             TimeSpan.FromHours(1),
-            ancora,
+            anchor,
             new TimeOnly(22, 0),
             new TimeOnly(6, 0));
 
-        var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 10, 23, 30, -3), Dst);
+        var next = schedule.NextOccurrenceAfter(At(2026, 6, 10, 23, 30, -3), Dst);
 
-        Assert.Equal(Em(2026, 6, 11, 0, 0, -3), proxima);
+        Assert.Equal(At(2026, 6, 11, 0, 0, -3), next);
     }
 
     [Fact]
-    public void Faixa_que_atravessa_a_meia_noite_reabre_a_noite_seguinte()
+    public void Window_crossing_midnight_reopens_the_next_night()
     {
-        var ancora = Em(2026, 6, 10, 22, 0, -3);
-        var agenda = new IntervalSchedule(
+        var anchor = At(2026, 6, 10, 22, 0, -3);
+        var schedule = new IntervalSchedule(
             TimeSpan.FromHours(1),
-            ancora,
+            anchor,
             new TimeOnly(22, 0),
             new TimeOnly(6, 0));
 
-        var proxima = agenda.NextOccurrenceAfter(Em(2026, 6, 11, 6, 30, -3), Dst);
+        var next = schedule.NextOccurrenceAfter(At(2026, 6, 11, 6, 30, -3), Dst);
 
-        Assert.Equal(Em(2026, 6, 11, 22, 0, -3), proxima);
+        Assert.Equal(At(2026, 6, 11, 22, 0, -3), next);
     }
 
     // ---------- DST
 
     [Fact]
-    public void Intervalo_e_duracao_absoluta_e_nao_se_desloca_no_horario_de_verao()
+    public void Interval_is_absolute_duration_and_does_not_shift_on_dst()
     {
         // "Every 1 hour" is 60 real minutes; the wall clock reads 01:00 because it jumped.
-        var ancora = Em(2026, 10, 14, 23, 0, -3);
-        var agenda = new IntervalSchedule(TimeSpan.FromHours(1), ancora);
+        var anchor = At(2026, 10, 14, 23, 0, -3);
+        var schedule = new IntervalSchedule(TimeSpan.FromHours(1), anchor);
 
-        var proxima = agenda.NextOccurrenceAfter(ancora, Dst);
+        var next = schedule.NextOccurrenceAfter(anchor, Dst);
 
-        Assert.Equal(ancora.AddHours(1), proxima);
+        Assert.Equal(anchor.AddHours(1), next);
 
-        var parede = TimeZoneInfo.ConvertTime(proxima!.Value, Dst);
-        Assert.Equal(new TimeSpan(1, 0, 0), parede.TimeOfDay);
-        Assert.Equal(TimeSpan.FromHours(-2), parede.Offset);
+        var wall = TimeZoneInfo.ConvertTime(next!.Value, Dst);
+        Assert.Equal(new TimeSpan(1, 0, 0), wall.TimeOfDay);
+        Assert.Equal(TimeSpan.FromHours(-2), wall.Offset);
     }
 
     // ---------- Describe
@@ -156,22 +156,22 @@ public class IntervalScheduleTests
     [InlineData(45, "A cada 45 min")]
     [InlineData(60, "A cada 1h")]
     [InlineData(90, "A cada 1h30")]
-    public void Descreve_o_intervalo_de_forma_curta(int minutos, string esperado)
+    public void Describes_the_interval_briefly(int minutes, string expected)
     {
-        var agenda = new IntervalSchedule(TimeSpan.FromMinutes(minutos), Em(2026, 6, 10, 9, 0, -3));
+        var schedule = new IntervalSchedule(TimeSpan.FromMinutes(minutes), At(2026, 6, 10, 9, 0, -3));
 
-        Assert.Equal(esperado, agenda.Describe());
+        Assert.Equal(expected, schedule.Describe());
     }
 
     [Fact]
-    public void Descreve_a_faixa_junto_quando_ela_existe()
+    public void Describes_the_window_alongside_when_present()
     {
-        var agenda = new IntervalSchedule(
+        var schedule = new IntervalSchedule(
             TimeSpan.FromMinutes(45),
-            Em(2026, 6, 10, 9, 0, -3),
+            At(2026, 6, 10, 9, 0, -3),
             new TimeOnly(9, 0),
             new TimeOnly(18, 0));
 
-        Assert.Equal("A cada 45 min, 09:00 às 18:00", agenda.Describe());
+        Assert.Equal("A cada 45 min, 09:00 às 18:00", schedule.Describe());
     }
 }

@@ -5,114 +5,114 @@ namespace Klaxon.Core.Tests;
 
 public class AlarmSchedulerTests
 {
-    private static DateTimeOffset Utc(int ano, int mes, int dia, int hora, int min = 0) =>
-        new(ano, mes, dia, hora, min, 0, TimeSpan.Zero);
+    private static DateTimeOffset Utc(int year, int month, int day, int hour, int min = 0) =>
+        new(year, month, day, hour, min, 0, TimeSpan.Zero);
 
     /// <summary>Builds a scheduler and captures its triggers, with a fake clock.</summary>
-    private static (AlarmScheduler Scheduler, FakeClock Clock, List<AlarmTriggeredEventArgs> Disparos) Montar(
-        DateTimeOffset inicio,
-        params Alarm[] alarmes)
+    private static (AlarmScheduler Scheduler, FakeClock Clock, List<AlarmTriggeredEventArgs> Fired) Build(
+        DateTimeOffset start,
+        params Alarm[] alarms)
     {
-        var clock = new FakeClock(inicio);
+        var clock = new FakeClock(start);
         var scheduler = new AlarmScheduler(clock);
-        var disparos = new List<AlarmTriggeredEventArgs>();
+        var fired = new List<AlarmTriggeredEventArgs>();
 
-        scheduler.Triggered += (_, e) => disparos.Add(e);
-        scheduler.Reload(alarmes);
+        scheduler.Triggered += (_, e) => fired.Add(e);
+        scheduler.Reload(alarms);
 
-        return (scheduler, clock, disparos);
+        return (scheduler, clock, fired);
     }
 
     [Fact]
-    public void Nao_dispara_antes_da_hora()
+    public void Does_not_fire_before_the_time()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromMinutes(59));
         scheduler.Tick();
 
-        Assert.Empty(disparos);
+        Assert.Empty(fired);
     }
 
     [Fact]
-    public void Dispara_na_hora()
+    public void Fires_on_time()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
 
-        var disparo = Assert.Single(disparos);
-        Assert.Equal(TriggerKind.OnTime, disparo.Kind);
-        Assert.Equal(Utc(2026, 6, 10, 7, 0), disparo.ScheduledFor);
-        Assert.Equal(0, disparo.SkippedOccurrences);
+        var trigger = Assert.Single(fired);
+        Assert.Equal(TriggerKind.OnTime, trigger.Kind);
+        Assert.Equal(Utc(2026, 6, 10, 7, 0), trigger.ScheduledFor);
+        Assert.Equal(0, trigger.SkippedOccurrences);
     }
 
     [Fact]
-    public void Dispara_uma_vez_so_mesmo_com_varios_ticks()
+    public void Fires_once_even_with_several_ticks()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 59), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 59), alarm);
 
         clock.Advance(TimeSpan.FromMinutes(1));
         scheduler.Tick();
         scheduler.Tick();
         scheduler.Tick();
 
-        Assert.Single(disparos);
+        Assert.Single(fired);
     }
 
     [Fact]
-    public void Atraso_dentro_da_janela_ainda_conta_como_na_hora()
+    public void Lateness_within_window_still_counts_as_on_time()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         // Ten minutes without a tick (a stall or long GC).
         clock.Advance(TimeSpan.FromMinutes(70));
         scheduler.Tick();
 
-        Assert.Equal(TriggerKind.OnTime, disparos.Single().Kind);
-        Assert.Equal(TimeSpan.FromMinutes(10), disparos.Single().Delay);
+        Assert.Equal(TriggerKind.OnTime, fired.Single().Kind);
+        Assert.Equal(TimeSpan.FromMinutes(10), fired.Single().Delay);
     }
 
     [Fact]
-    public void PC_dormindo_alem_da_janela_marca_o_alarme_como_perdido()
+    public void Sleeping_past_the_window_marks_the_alarm_missed()
     {
-        var alarme = Alarm.New("Remédio", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Remédio", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         // Slept at 6am, woke at 10am; the 7am alarm must not look on-time.
         clock.Advance(TimeSpan.FromHours(4));
         scheduler.Tick();
 
-        var disparo = Assert.Single(disparos);
-        Assert.Equal(TriggerKind.Missed, disparo.Kind);
-        Assert.Equal(TimeSpan.FromHours(3), disparo.Delay);
+        var trigger = Assert.Single(fired);
+        Assert.Equal(TriggerKind.Missed, trigger.Kind);
+        Assert.Equal(TimeSpan.FromHours(3), trigger.Delay);
     }
 
     [Fact]
-    public void Tres_dias_desligado_geram_um_alerta_e_nao_tres()
+    public void Three_days_off_produce_one_alert_not_three()
     {
-        var alarme = Alarm.New("Remédio", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Remédio", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.SetTo(Utc(2026, 6, 13, 8, 0));
         scheduler.Tick();
 
-        var disparo = Assert.Single(disparos);
-        Assert.Equal(TriggerKind.Missed, disparo.Kind);
-        Assert.Equal(Utc(2026, 6, 13, 7, 0), disparo.ScheduledFor);
-        Assert.Equal(3, disparo.SkippedOccurrences);
+        var trigger = Assert.Single(fired);
+        Assert.Equal(TriggerKind.Missed, trigger.Kind);
+        Assert.Equal(Utc(2026, 6, 13, 7, 0), trigger.ScheduledFor);
+        Assert.Equal(3, trigger.SkippedOccurrences);
     }
 
     [Fact]
-    public void Depois_de_um_disparo_a_proxima_ocorrencia_ja_esta_agendada()
+    public void After_firing_the_next_occurrence_is_already_scheduled()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
@@ -121,159 +121,159 @@ public class AlarmSchedulerTests
     }
 
     [Fact]
-    public void Alarme_unico_some_da_agenda_depois_de_disparar()
+    public void One_time_alarm_leaves_the_schedule_after_firing()
     {
-        var alarme = Alarm.New("Ligar para o dentista", new OneTimeSchedule(Utc(2026, 6, 10, 7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Ligar para o dentista", new OneTimeSchedule(Utc(2026, 6, 10, 7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
 
-        Assert.Single(disparos);
+        Assert.Single(fired);
         Assert.Null(scheduler.NextFireTime);
     }
 
     [Fact]
-    public void Relogio_andando_para_tras_recalcula_em_vez_de_disparar_em_rajada()
+    public void Clock_moving_back_recomputes_instead_of_firing_a_burst()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         // The user set the system clock ten days back.
         clock.SetTo(Utc(2026, 5, 31, 6, 0));
         scheduler.Tick();
 
-        Assert.Empty(disparos);
+        Assert.Empty(fired);
         Assert.Equal(Utc(2026, 5, 31, 7, 0), scheduler.NextFireTime);
     }
 
     [Fact]
-    public void Alarme_desligado_nao_entra_na_agenda()
+    public void Disabled_alarm_does_not_enter_the_schedule()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0))) with { IsEnabled = false };
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0))) with { IsEnabled = false };
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(2));
         scheduler.Tick();
 
-        Assert.Empty(disparos);
+        Assert.Empty(fired);
         Assert.Null(scheduler.NextFireTime);
     }
 
     // ---------- Snooze
 
     [Fact]
-    public void Adiar_reapresenta_o_alarme_depois_do_prazo()
+    public void Snooze_reshows_the_alarm_after_the_delay()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
-        disparos.Clear();
+        fired.Clear();
 
-        Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(5), out _));
+        Assert.True(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(5), out _));
 
         clock.Advance(TimeSpan.FromMinutes(4));
         scheduler.Tick();
-        Assert.Empty(disparos);
+        Assert.Empty(fired);
 
         clock.Advance(TimeSpan.FromMinutes(1));
         scheduler.Tick();
 
-        Assert.Equal(TriggerKind.Snooze, disparos.Single().Kind);
+        Assert.Equal(TriggerKind.Snooze, fired.Single().Kind);
     }
 
     [Fact]
-    public void Nivel_critico_aceita_um_unico_adiamento()
+    public void Critical_level_allows_a_single_snooze()
     {
-        var alarme = Alarm.New("Sair de casa", new DailySchedule(new TimeOnly(7, 0)), UrgencyLevel.Critical);
-        var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Sair de casa", new DailySchedule(new TimeOnly(7, 0)), UrgencyLevel.Critical);
+        var (scheduler, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
 
-        Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(2), out _));
-        Assert.False(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(2), out var recusa));
-        Assert.Contains("uma vez", recusa);
+        Assert.True(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(2), out _));
+        Assert.False(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(2), out var refusal));
+        Assert.Contains("uma vez", refusal);
     }
 
     [Fact]
-    public void Nivel_sussurro_nao_aceita_adiamento()
+    public void Whisper_level_allows_no_snooze()
     {
-        var alarme = Alarm.New("Beber água", new DailySchedule(new TimeOnly(7, 0)), UrgencyLevel.Whisper);
-        var (scheduler, _, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Beber água", new DailySchedule(new TimeOnly(7, 0)), UrgencyLevel.Whisper);
+        var (scheduler, _, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
-        Assert.False(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(5), out var recusa));
-        Assert.Contains("Sussurro", recusa);
+        Assert.False(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(5), out var refusal));
+        Assert.Contains("Sussurro", refusal);
     }
 
     [Fact]
-    public void Nova_ocorrencia_devolve_o_orcamento_de_adiamentos()
+    public void New_occurrence_restores_the_snooze_budget()
     {
-        var alarme = Alarm.New("Sair de casa", new DailySchedule(new TimeOnly(7, 0)), UrgencyLevel.Critical);
-        var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Sair de casa", new DailySchedule(new TimeOnly(7, 0)), UrgencyLevel.Critical);
+        var (scheduler, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
-        Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(2), out _));
-        Assert.Equal(1, scheduler.SnoozeCountFor(alarme.Id));
+        Assert.True(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(2), out _));
+        Assert.Equal(1, scheduler.SnoozeCountFor(alarm.Id));
 
         // Next day: the snooze limit is per occurrence, not forever.
         clock.SetTo(Utc(2026, 6, 11, 7, 0));
         scheduler.Tick();
 
-        Assert.Equal(0, scheduler.SnoozeCountFor(alarme.Id));
-        Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(2), out _));
+        Assert.Equal(0, scheduler.SnoozeCountFor(alarm.Id));
+        Assert.True(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(2), out _));
     }
 
     [Fact]
-    public void Dispensar_cancela_o_adiamento_pendente()
+    public void Dismiss_cancels_the_pending_snooze()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
-        disparos.Clear();
+        fired.Clear();
 
-        scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(5), out _);
-        scheduler.Dismiss(alarme.Id);
+        scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(5), out _);
+        scheduler.Dismiss(alarm.Id);
 
         clock.Advance(TimeSpan.FromMinutes(10));
         scheduler.Tick();
 
-        Assert.Empty(disparos);
+        Assert.Empty(fired);
     }
 
     [Fact]
-    public void Remover_o_alarme_leva_junto_o_adiamento_pendente()
+    public void Removing_the_alarm_drops_the_pending_snooze()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
-        scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(5), out _);
-        disparos.Clear();
+        scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(5), out _);
+        fired.Clear();
 
         scheduler.Reload([]);
 
         clock.Advance(TimeSpan.FromMinutes(10));
         scheduler.Tick();
 
-        Assert.Empty(disparos);
+        Assert.Empty(fired);
     }
 
     [Fact]
-    public void NextFireTime_considera_o_adiamento_quando_ele_vem_antes()
+    public void NextFireTime_considers_the_snooze_when_it_comes_first()
     {
-        var alarme = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
-        var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)));
+        var (scheduler, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
-        scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(5), out _);
+        scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(5), out _);
 
         Assert.Equal(Utc(2026, 6, 10, 7, 5), scheduler.NextFireTime);
     }

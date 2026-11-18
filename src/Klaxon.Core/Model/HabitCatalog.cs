@@ -44,8 +44,8 @@ public static class HabitCatalog
         Alarm? existing = null)
     {
         var interval = TimeSpan.FromMinutes(minutes);
-        var anchor = existing?.Schedule is IntervalSchedule antigo && antigo.Every == interval
-            ? antigo.Anchor
+        var anchor = existing?.Schedule is IntervalSchedule previous && previous.Every == interval
+            ? previous.Anchor
             : now;
 
         return new Alarm

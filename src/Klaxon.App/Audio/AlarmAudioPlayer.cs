@@ -27,22 +27,22 @@ public sealed class AlarmAudioPlayer(ILogger log) : IDisposable
         {
             Stop();
 
-            ISampleProvider fonte = BuildSource(spec);
+            ISampleProvider source = BuildSource(spec);
 
             if (spec.Volume < 1d)
             {
-                fonte = new VolumeSampleProvider(fonte) { Volume = (float)Math.Clamp(spec.Volume, 0d, 1d) };
+                source = new VolumeSampleProvider(source) { Volume = (float)Math.Clamp(spec.Volume, 0d, 1d) };
             }
 
             if (spec.FadeIn > TimeSpan.Zero)
             {
-                var fade = new FadeInOutSampleProvider(fonte, initiallySilent: true);
+                var fade = new FadeInOutSampleProvider(source, initiallySilent: true);
                 fade.BeginFadeIn(spec.FadeIn.TotalMilliseconds);
-                fonte = fade;
+                source = fade;
             }
 
             _output = new WaveOutEvent();
-            _output.Init(fonte);
+            _output.Init(source);
             _output.Play();
         }
         catch (Exception ex)
@@ -56,21 +56,21 @@ public sealed class AlarmAudioPlayer(ILogger log) : IDisposable
     /// <summary>Builds the sample source: the user's file, or the built-in tone.</summary>
     private ISampleProvider BuildSource(SoundSpec spec)
     {
-        if (spec.FilePath is { Length: > 0 } caminho && File.Exists(caminho))
+        if (spec.FilePath is { Length: > 0 } path && File.Exists(path))
         {
-            _reader = new AudioFileReader(caminho);
+            _reader = new AudioFileReader(path);
             return spec.Loop ? new LoopingSampleProvider(_reader) : _reader;
         }
 
-        if (spec.FilePath is { Length: > 0 } ausente)
+        if (spec.FilePath is { Length: > 0 } missing)
         {
-            _log.LogWarning("Som {Caminho} não encontrado. Usando o toque padrão.", ausente);
+            _log.LogWarning("Som {Caminho} não encontrado. Usando o toque padrão.", missing);
         }
 
-        var repete = spec.Loop || spec.RepeatEvery > TimeSpan.Zero;
-        var intervalo = spec.RepeatEvery > TimeSpan.Zero ? spec.RepeatEvery : TimeSpan.FromMilliseconds(700);
+        var loop = spec.Loop || spec.RepeatEvery > TimeSpan.Zero;
+        var interval = spec.RepeatEvery > TimeSpan.Zero ? spec.RepeatEvery : TimeSpan.FromMilliseconds(700);
 
-        return new AlarmToneProvider(intervalo, repete);
+        return new AlarmToneProvider(interval, loop);
     }
 
     /// <summary>Stops playback and releases audio resources.</summary>

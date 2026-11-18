@@ -94,14 +94,14 @@ public sealed class AlarmScheduler : IAlarmScheduler
     /// <summary>Raises <see cref="StateChanged"/> once if state changed since the last drain.</summary>
     private void RaiseStateChangedIfDirty()
     {
-        bool mudou;
+        bool changed;
         lock (_gate)
         {
-            mudou = _stateDirty;
+            changed = _stateDirty;
             _stateDirty = false;
         }
 
-        if (mudou)
+        if (changed)
         {
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -132,21 +132,21 @@ public sealed class AlarmScheduler : IAlarmScheduler
             }
 
             // Drop snoozes, counters and escalations of alarms that are gone.
-            foreach (var orfao in _snoozes.Keys.Where(id => !_alarms.ContainsKey(id)).ToList())
+            foreach (var orphan in _snoozes.Keys.Where(id => !_alarms.ContainsKey(id)).ToList())
             {
-                _snoozes.Remove(orfao);
+                _snoozes.Remove(orphan);
                 _stateDirty = true;
             }
 
-            foreach (var orfao in _snoozeCounts.Keys.Where(id => !_alarms.ContainsKey(id)).ToList())
+            foreach (var orphan in _snoozeCounts.Keys.Where(id => !_alarms.ContainsKey(id)).ToList())
             {
-                _snoozeCounts.Remove(orfao);
+                _snoozeCounts.Remove(orphan);
                 _stateDirty = true;
             }
 
-            foreach (var orfao in _escalations.Keys.Where(id => !_alarms.ContainsKey(id)).ToList())
+            foreach (var orphan in _escalations.Keys.Where(id => !_alarms.ContainsKey(id)).ToList())
             {
-                _escalations.Remove(orfao);
+                _escalations.Remove(orphan);
                 _stateDirty = true;
             }
 
@@ -158,7 +158,7 @@ public sealed class AlarmScheduler : IAlarmScheduler
 
     public void Tick()
     {
-        List<AlarmTriggeredEventArgs> disparos;
+        List<AlarmTriggeredEventArgs> fired;
 
         lock (_gate)
         {
@@ -174,14 +174,14 @@ public sealed class AlarmScheduler : IAlarmScheduler
                 RecomputeAll(now);
             }
 
-            disparos = Collect(now);
+            fired = Collect(now);
             _lastTick = now;
         }
 
         // Raise outside the lock: a handler may open a window or call Reload.
-        foreach (var disparo in disparos)
+        foreach (var trigger in fired)
         {
-            Triggered?.Invoke(this, disparo);
+            Triggered?.Invoke(this, trigger);
         }
 
         RaiseStateChangedIfDirty();
@@ -189,20 +189,20 @@ public sealed class AlarmScheduler : IAlarmScheduler
 
     public bool TrySnooze(Guid alarmId, TimeSpan delay, out string? refusal)
     {
-        bool sucesso;
+        bool success;
 
         lock (_gate)
         {
-            sucesso = TrySnoozeLocked(alarmId, delay, out refusal);
+            success = TrySnoozeLocked(alarmId, delay, out refusal);
         }
 
         // Persist outside the lock so the handler's disk write doesn't block ticks.
-        if (sucesso)
+        if (success)
         {
             RaiseStateChangedIfDirty();
         }
 
-        return sucesso;
+        return success;
     }
 
     /// <summary>Snooze logic, run under the lock.</summary>
@@ -215,18 +215,18 @@ public sealed class AlarmScheduler : IAlarmScheduler
         }
 
         // Snooze policy follows the effective (possibly escalated) level.
-        var nivel = _escalations.TryGetValue(alarmId, out var esc) ? esc.Level : alarm.Urgency;
-        var perfil = UrgencyProfiles.Get(nivel);
-        var policy = perfil.Snooze;
+        var level = _escalations.TryGetValue(alarmId, out var esc) ? esc.Level : alarm.Urgency;
+        var profile = UrgencyProfiles.Get(level);
+        var policy = profile.Snooze;
 
         if (!policy.IsEnabled)
         {
-            refusal = Loc.Format("Snooze_NotAllowed", Loc.UrgencyName(nivel));
+            refusal = Loc.Format("Snooze_NotAllowed", Loc.UrgencyName(level));
             return false;
         }
 
-        var usados = _snoozeCounts.GetValueOrDefault(alarmId);
-        if (usados >= policy.MaxCount)
+        var used = _snoozeCounts.GetValueOrDefault(alarmId);
+        if (used >= policy.MaxCount)
         {
             refusal = policy.MaxCount == 1
                 ? Loc.Get("Snooze_Once")
@@ -235,7 +235,7 @@ public sealed class AlarmScheduler : IAlarmScheduler
             return false;
         }
 
-        _snoozeCounts[alarmId] = usados + 1;
+        _snoozeCounts[alarmId] = used + 1;
         _snoozes[alarmId] = _clock.Now + delay;
         _stateDirty = true;
 
@@ -244,18 +244,18 @@ public sealed class AlarmScheduler : IAlarmScheduler
             // Snoozing hides the alert, so the "ignored" clock pauses.
             esc.IgnoreDeadline = null;
 
-            if (esc.Policy.AfterSnoozes is { } max && usados + 1 >= max)
+            if (esc.Policy.AfterSnoozes is { } max && used + 1 >= max)
             {
-                var subido = Bump(esc.Level, esc.Policy.Ceiling);
-                if (subido != esc.Level)
+                var raised = Bump(esc.Level, esc.Policy.Ceiling);
+                if (raised != esc.Level)
                 {
                     _log.LogInformation(
                         "Alarme {Titulo} subiu para {Nivel} por adiamento.",
                         alarm.Title,
-                        subido);
+                        raised);
                 }
 
-                esc.Level = subido;
+                esc.Level = raised;
             }
         }
 
@@ -263,7 +263,7 @@ public sealed class AlarmScheduler : IAlarmScheduler
             "Alarme {Titulo} adiado por {Minutos} min ({Usados}/{Max}).",
             alarm.Title,
             delay.TotalMinutes,
-            usados + 1,
+            used + 1,
             policy.MaxCount);
 
         refusal = null;
@@ -274,11 +274,11 @@ public sealed class AlarmScheduler : IAlarmScheduler
     {
         lock (_gate)
         {
-            var removeu = _snoozes.Remove(alarmId);
-            removeu |= _snoozeCounts.Remove(alarmId);
-            removeu |= _escalations.Remove(alarmId);
+            var removed = _snoozes.Remove(alarmId);
+            removed |= _snoozeCounts.Remove(alarmId);
+            removed |= _escalations.Remove(alarmId);
 
-            if (removeu)
+            if (removed)
             {
                 _stateDirty = true;
             }
@@ -290,14 +290,14 @@ public sealed class AlarmScheduler : IAlarmScheduler
     /// <summary>Rises one level, capped at the ceiling and Critical.</summary>
     private static UrgencyLevel Bump(UrgencyLevel level, UrgencyLevel ceiling)
     {
-        var proximo = (UrgencyLevel)((int)level + 1);
+        var next = (UrgencyLevel)((int)level + 1);
 
-        if (proximo > ceiling)
+        if (next > ceiling)
         {
-            proximo = ceiling;
+            next = ceiling;
         }
 
-        return proximo > UrgencyLevel.Critical ? UrgencyLevel.Critical : proximo;
+        return next > UrgencyLevel.Critical ? UrgencyLevel.Critical : next;
     }
 
     public int SnoozeCountFor(Guid alarmId)
@@ -318,7 +318,7 @@ public sealed class AlarmScheduler : IAlarmScheduler
                 .Select(id => new SnoozeState(
                     id,
                     _snoozeCounts.GetValueOrDefault(id),
-                    _snoozes.TryGetValue(id, out var quando) ? quando : null))
+                    _snoozes.TryGetValue(id, out var at) ? at : null))
                 .ToList();
 
             var escalations = _escalations
@@ -346,23 +346,23 @@ public sealed class AlarmScheduler : IAlarmScheduler
                     _snoozeCounts[s.AlarmId] = s.Count;
                 }
 
-                if (s.DueAt is { } quando)
+                if (s.DueAt is { } at)
                 {
-                    _snoozes[s.AlarmId] = quando;
+                    _snoozes[s.AlarmId] = at;
                 }
             }
 
             foreach (var e in state.Escalations)
             {
                 // Re-attach the policy from the alarm; drop it if the alarm or its policy is gone.
-                if (!_alarms.TryGetValue(e.AlarmId, out var alarme) || alarme.Escalation is not { } pol)
+                if (!_alarms.TryGetValue(e.AlarmId, out var alarm) || alarm.Escalation is not { } policy)
                 {
                     continue;
                 }
 
                 _escalations[e.AlarmId] = new EscalationState
                 {
-                    Policy = pol,
+                    Policy = policy,
                     Level = e.Level,
                     IgnoreDeadline = e.IgnoreDeadline,
                 };
@@ -379,10 +379,10 @@ public sealed class AlarmScheduler : IAlarmScheduler
 
         foreach (var alarm in _alarms.Values)
         {
-            var proxima = alarm.Schedule.NextOccurrenceAfter(now, zone);
-            if (proxima is not null)
+            var next = alarm.Schedule.NextOccurrenceAfter(now, zone);
+            if (next is not null)
             {
-                _next[alarm.Id] = proxima.Value;
+                _next[alarm.Id] = next.Value;
             }
         }
     }
@@ -390,57 +390,57 @@ public sealed class AlarmScheduler : IAlarmScheduler
     /// <summary>Collects everything due now: snoozes, escalations and occurrences.</summary>
     private List<AlarmTriggeredEventArgs> Collect(DateTimeOffset now)
     {
-        var disparos = new List<AlarmTriggeredEventArgs>();
+        var fired = new List<AlarmTriggeredEventArgs>();
         var zone = _clock.LocalTimeZone;
 
-        foreach (var (id, quando) in _snoozes.Where(kv => kv.Value <= now).ToList())
+        foreach (var (id, at) in _snoozes.Where(kv => kv.Value <= now).ToList())
         {
             _snoozes.Remove(id);
             _stateDirty = true;
 
-            if (_alarms.TryGetValue(id, out var alarme))
+            if (_alarms.TryGetValue(id, out var alarm))
             {
                 // Alert is back on screen: the "ignored" clock restarts from now.
-                var nivel = alarme.Urgency;
+                var level = alarm.Urgency;
                 if (_escalations.TryGetValue(id, out var esc))
                 {
-                    nivel = esc.Level;
+                    level = esc.Level;
                     esc.IgnoreDeadline = esc.Policy.AfterIgnoredFor is { } d && esc.Level < esc.Policy.Ceiling
                         ? now + d
                         : null;
                 }
 
-                disparos.Add(new AlarmTriggeredEventArgs
+                fired.Add(new AlarmTriggeredEventArgs
                 {
-                    Alarm = alarme,
-                    ScheduledFor = quando,
+                    Alarm = alarm,
+                    ScheduledFor = at,
                     FiredAt = now,
                     Kind = TriggerKind.Snooze,
-                    EffectiveUrgency = nivel,
+                    EffectiveUrgency = level,
                 });
             }
         }
 
-        disparos.AddRange(CollectEscalations(now));
+        fired.AddRange(CollectEscalations(now));
 
         foreach (var (id, _) in _next.Where(kv => kv.Value <= now).ToList())
         {
-            var alarme = _alarms[id];
+            var alarm = _alarms[id];
 
             // Advance to the future, counting how many occurrences were skipped.
-            var vencida = _next[id];
-            var ocorrencias = 0;
-            DateTimeOffset? cursor = vencida;
+            var due = _next[id];
+            var occurrences = 0;
+            DateTimeOffset? cursor = due;
 
             while (cursor is not null && cursor.Value <= now)
             {
-                vencida = cursor.Value;
-                ocorrencias++;
-                cursor = alarme.Schedule.NextOccurrenceAfter(cursor.Value, zone);
+                due = cursor.Value;
+                occurrences++;
+                cursor = alarm.Schedule.NextOccurrenceAfter(cursor.Value, zone);
 
-                if (ocorrencias > 100_000)
+                if (occurrences > 100_000)
                 {
-                    _log.LogError("Agenda de {Titulo} não avança. Desagendando.", alarme.Title);
+                    _log.LogError("Agenda de {Titulo} não avança. Desagendando.", alarm.Title);
                     cursor = null;
                 }
             }
@@ -456,29 +456,29 @@ public sealed class AlarmScheduler : IAlarmScheduler
 
             // New occurrence: reset the snooze budget and restart escalation.
             _snoozeCounts.Remove(id);
-            ResetEscalation(id, alarme, now);
+            ResetEscalation(id, alarm, now);
             _stateDirty = true;
 
-            var atraso = now - vencida;
+            var lateness = now - due;
 
-            disparos.Add(new AlarmTriggeredEventArgs
+            fired.Add(new AlarmTriggeredEventArgs
             {
-                Alarm = alarme,
-                ScheduledFor = vencida,
+                Alarm = alarm,
+                ScheduledFor = due,
                 FiredAt = now,
-                Kind = atraso <= CatchUpWindow ? TriggerKind.OnTime : TriggerKind.Missed,
-                SkippedOccurrences = ocorrencias - 1,
-                EffectiveUrgency = alarme.Urgency,
+                Kind = lateness <= CatchUpWindow ? TriggerKind.OnTime : TriggerKind.Missed,
+                SkippedOccurrences = occurrences - 1,
+                EffectiveUrgency = alarm.Urgency,
             });
         }
 
-        return disparos;
+        return fired;
     }
 
     /// <summary>Arms (or clears) the escalation state for a new occurrence.</summary>
-    private void ResetEscalation(Guid id, Alarm alarme, DateTimeOffset now)
+    private void ResetEscalation(Guid id, Alarm alarm, DateTimeOffset now)
     {
-        if (alarme.Escalation is not { } pol)
+        if (alarm.Escalation is not { } policy)
         {
             _escalations.Remove(id);
             return;
@@ -486,9 +486,9 @@ public sealed class AlarmScheduler : IAlarmScheduler
 
         _escalations[id] = new EscalationState
         {
-            Policy = pol,
-            Level = alarme.Urgency,
-            IgnoreDeadline = pol.AfterIgnoredFor is { } d && alarme.Urgency < pol.Ceiling
+            Policy = policy,
+            Level = alarm.Urgency,
+            IgnoreDeadline = policy.AfterIgnoredFor is { } d && alarm.Urgency < policy.Ceiling
                 ? now + d
                 : null,
         };
@@ -497,52 +497,52 @@ public sealed class AlarmScheduler : IAlarmScheduler
     /// <summary>Re-shows, one level higher, alarms whose "ignored" deadline passed.</summary>
     private List<AlarmTriggeredEventArgs> CollectEscalations(DateTimeOffset now)
     {
-        var disparos = new List<AlarmTriggeredEventArgs>();
+        var fired = new List<AlarmTriggeredEventArgs>();
 
-        var vencidos = _escalations
+        var dueEscalations = _escalations
             .Where(kv => kv.Value.IgnoreDeadline is { } dl && dl <= now)
             .ToList();
 
         // Every branch below mutates escalation state, so persist afterwards.
-        if (vencidos.Count > 0)
+        if (dueEscalations.Count > 0)
         {
             _stateDirty = true;
         }
 
-        foreach (var (id, esc) in vencidos)
+        foreach (var (id, esc) in dueEscalations)
         {
-            if (!_alarms.TryGetValue(id, out var alarme))
+            if (!_alarms.TryGetValue(id, out var alarm))
             {
                 _escalations.Remove(id);
                 continue;
             }
 
-            var subido = Bump(esc.Level, esc.Policy.Ceiling);
+            var raised = Bump(esc.Level, esc.Policy.Ceiling);
 
-            if (subido == esc.Level)
+            if (raised == esc.Level)
             {
                 // Already at ceiling: stop counting.
                 esc.IgnoreDeadline = null;
                 continue;
             }
 
-            esc.Level = subido;
-            esc.IgnoreDeadline = esc.Policy.AfterIgnoredFor is { } d && subido < esc.Policy.Ceiling
+            esc.Level = raised;
+            esc.IgnoreDeadline = esc.Policy.AfterIgnoredFor is { } d && raised < esc.Policy.Ceiling
                 ? now + d
                 : null;
 
-            _log.LogInformation("Alarme {Titulo} subiu para {Nivel} por ficar ignorado.", alarme.Title, subido);
+            _log.LogInformation("Alarme {Titulo} subiu para {Nivel} por ficar ignorado.", alarm.Title, raised);
 
-            disparos.Add(new AlarmTriggeredEventArgs
+            fired.Add(new AlarmTriggeredEventArgs
             {
-                Alarm = alarme,
+                Alarm = alarm,
                 ScheduledFor = now,
                 FiredAt = now,
                 Kind = TriggerKind.Escalation,
-                EffectiveUrgency = subido,
+                EffectiveUrgency = raised,
             });
         }
 
-        return disparos;
+        return fired;
     }
 }

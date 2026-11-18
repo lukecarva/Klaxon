@@ -6,21 +6,21 @@ namespace Klaxon.Core.Tests;
 
 public class JsonSchedulerStateStoreTests : IDisposable
 {
-    private readonly string _pasta;
-    private readonly string _arquivo;
+    private readonly string _folder;
+    private readonly string _file;
 
     public JsonSchedulerStateStoreTests()
     {
-        _pasta = Path.Combine(Path.GetTempPath(), "KlaxonTests", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_pasta);
-        _arquivo = Path.Combine(_pasta, "scheduler-state.json");
+        _folder = Path.Combine(Path.GetTempPath(), "KlaxonTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_folder);
+        _file = Path.Combine(_folder, "scheduler-state.json");
     }
 
     public void Dispose()
     {
         try
         {
-            Directory.Delete(_pasta, recursive: true);
+            Directory.Delete(_folder, recursive: true);
         }
         catch (IOException)
         {
@@ -31,97 +31,97 @@ public class JsonSchedulerStateStoreTests : IDisposable
     }
 
     [Fact]
-    public void Arquivo_inexistente_carrega_estado_vazio()
+    public void Missing_file_loads_an_empty_state()
     {
-        var store = new JsonSchedulerStateStore(_arquivo);
+        var store = new JsonSchedulerStateStore(_file);
 
-        var estado = store.Load();
+        var state = store.Load();
 
-        Assert.True(estado.IsEmpty);
+        Assert.True(state.IsEmpty);
     }
 
     [Fact]
-    public void Round_trip_preserva_adiamentos_e_escaladas()
+    public void Round_trip_preserves_snoozes_and_escalations()
     {
-        var store = new JsonSchedulerStateStore(_arquivo);
+        var store = new JsonSchedulerStateStore(_file);
         var id1 = Guid.NewGuid();
         var id2 = Guid.NewGuid();
-        var quando = new DateTimeOffset(2026, 6, 10, 9, 30, 0, TimeSpan.FromHours(-3));
-        var prazo = new DateTimeOffset(2026, 6, 10, 9, 45, 0, TimeSpan.FromHours(-3));
+        var when = new DateTimeOffset(2026, 6, 10, 9, 30, 0, TimeSpan.FromHours(-3));
+        var deadline = new DateTimeOffset(2026, 6, 10, 9, 45, 0, TimeSpan.FromHours(-3));
 
         var original = new SchedulerState
         {
-            Snoozes = [new SnoozeState(id1, 2, quando)],
-            Escalations = [new EscalationSnapshot(id2, UrgencyLevel.High, prazo)],
+            Snoozes = [new SnoozeState(id1, 2, when)],
+            Escalations = [new EscalationSnapshot(id2, UrgencyLevel.High, deadline)],
         };
 
         store.Save(original);
-        var lido = store.Load();
+        var loaded = store.Load();
 
-        var soneca = Assert.Single(lido.Snoozes);
-        Assert.Equal(id1, soneca.AlarmId);
-        Assert.Equal(2, soneca.Count);
-        Assert.Equal(quando, soneca.DueAt);
+        var snooze = Assert.Single(loaded.Snoozes);
+        Assert.Equal(id1, snooze.AlarmId);
+        Assert.Equal(2, snooze.Count);
+        Assert.Equal(when, snooze.DueAt);
 
-        var escalada = Assert.Single(lido.Escalations);
-        Assert.Equal(id2, escalada.AlarmId);
-        Assert.Equal(UrgencyLevel.High, escalada.Level);
-        Assert.Equal(prazo, escalada.IgnoreDeadline);
+        var escalation = Assert.Single(loaded.Escalations);
+        Assert.Equal(id2, escalation.AlarmId);
+        Assert.Equal(UrgencyLevel.High, escalation.Level);
+        Assert.Equal(deadline, escalation.IgnoreDeadline);
     }
 
     [Fact]
-    public void Adiamento_sem_hora_pendente_sobrevive_ao_round_trip()
+    public void Snooze_without_pending_time_survives_the_round_trip()
     {
         // A consumed snooze keeps its counter but has no pending wake time.
-        var store = new JsonSchedulerStateStore(_arquivo);
+        var store = new JsonSchedulerStateStore(_file);
         var id = Guid.NewGuid();
 
         store.Save(new SchedulerState { Snoozes = [new SnoozeState(id, 1, null)] });
-        var lido = store.Load();
+        var loaded = store.Load();
 
-        var soneca = Assert.Single(lido.Snoozes);
-        Assert.Equal(1, soneca.Count);
-        Assert.Null(soneca.DueAt);
+        var snooze = Assert.Single(loaded.Snoozes);
+        Assert.Equal(1, snooze.Count);
+        Assert.Null(snooze.DueAt);
     }
 
     [Fact]
-    public void Salvar_por_cima_deixa_backup_da_versao_anterior()
+    public void Saving_over_leaves_a_backup_of_the_previous_version()
     {
-        var store = new JsonSchedulerStateStore(_arquivo);
+        var store = new JsonSchedulerStateStore(_file);
 
         store.Save(new SchedulerState { Snoozes = [new SnoozeState(Guid.NewGuid(), 1, null)] });
         store.Save(new SchedulerState());
 
-        Assert.True(File.Exists(_arquivo + ".bak"), "A gravação atômica deve deixar um .bak.");
-        Assert.False(File.Exists(_arquivo + ".tmp"), "O temporário não pode sobrar.");
+        Assert.True(File.Exists(_file + ".bak"), "The atomic write must leave a .bak.");
+        Assert.False(File.Exists(_file + ".tmp"), "The temp file must not be left behind.");
         Assert.True(store.Load().IsEmpty);
     }
 
     [Fact]
-    public void Enum_de_nivel_e_gravado_como_nome()
+    public void Level_enum_is_written_as_a_name()
     {
-        var store = new JsonSchedulerStateStore(_arquivo);
+        var store = new JsonSchedulerStateStore(_file);
 
         store.Save(new SchedulerState
         {
             Escalations = [new EscalationSnapshot(Guid.NewGuid(), UrgencyLevel.Critical, null)],
         });
 
-        Assert.Contains("\"Critical\"", File.ReadAllText(_arquivo));
+        Assert.Contains("\"Critical\"", File.ReadAllText(_file));
     }
 
     [Fact]
-    public void Arquivo_corrompido_vai_para_quarentena_em_vez_de_ser_sobrescrito()
+    public void Corrupt_file_is_quarantined_instead_of_overwritten()
     {
-        File.WriteAllText(_arquivo, "{ isto não é json válido");
+        File.WriteAllText(_file, "{ isto não é json válido");
 
-        var store = new JsonSchedulerStateStore(_arquivo);
-        var estado = store.Load();
+        var store = new JsonSchedulerStateStore(_file);
+        var state = store.Load();
 
-        Assert.True(estado.IsEmpty);
-        Assert.False(File.Exists(_arquivo), "O arquivo ilegível deve sair do caminho.");
+        Assert.True(state.IsEmpty);
+        Assert.False(File.Exists(_file), "The unreadable file must be moved aside.");
 
-        var quarentena = Directory.GetFiles(_pasta, "scheduler-state.json.corrompido-*");
-        Assert.Single(quarentena);
+        var quarantine = Directory.GetFiles(_folder, "scheduler-state.json.corrompido-*");
+        Assert.Single(quarantine);
     }
 }

@@ -22,22 +22,22 @@ public sealed record IntervalSchedule(
             return null;
         }
 
-        var candidato = AlignToGrid(from);
+        var candidate = AlignToGrid(from);
 
-        for (var salto = 0; salto < MaxWindowHops; salto++)
+        for (var hop = 0; hop < MaxWindowHops; hop++)
         {
-            if (IsInWindow(candidato, zone))
+            if (IsInWindow(candidate, zone))
             {
-                return candidato;
+                return candidate;
             }
 
-            var abertura = NextWindowOpening(candidato, zone);
-            if (abertura is null)
+            var opening = NextWindowOpening(candidate, zone);
+            if (opening is null)
             {
                 return null;
             }
 
-            candidato = AlignToGrid(abertura.Value - TimeSpan.FromTicks(1));
+            candidate = AlignToGrid(opening.Value - TimeSpan.FromTicks(1));
         }
 
         return null;
@@ -46,17 +46,17 @@ public sealed record IntervalSchedule(
     /// <summary>First cycle instant strictly after <paramref name="from"/>.</summary>
     private DateTimeOffset AlignToGrid(DateTimeOffset from)
     {
-        var decorrido = from - Anchor;
-        var ciclos = Math.Floor(decorrido / Every) + 1;
+        var elapsed = from - Anchor;
+        var cycles = Math.Floor(elapsed / Every) + 1;
 
-        var candidato = Anchor + (Every * ciclos);
+        var candidate = Anchor + (Every * cycles);
 
-        while (candidato <= from)
+        while (candidate <= from)
         {
-            candidato += Every;
+            candidate += Every;
         }
 
-        return candidato;
+        return candidate;
     }
 
     /// <summary>Whether an instant falls inside the active range.</summary>
@@ -67,12 +67,12 @@ public sealed record IntervalSchedule(
             return true;
         }
 
-        var hora = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTime(instant, zone).DateTime);
+        var time = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTime(instant, zone).DateTime);
 
         // Range crossing midnight (22:00-06:00) needs the inverted test.
         return ActiveFrom!.Value <= ActiveTo!.Value
-            ? hora >= ActiveFrom.Value && hora < ActiveTo.Value
-            : hora >= ActiveFrom.Value || hora < ActiveTo.Value;
+            ? time >= ActiveFrom.Value && time < ActiveTo.Value
+            : time >= ActiveFrom.Value || time < ActiveTo.Value;
     }
 
     /// <summary>Next time the active range opens after <paramref name="from"/>.</summary>
@@ -83,14 +83,14 @@ public sealed record IntervalSchedule(
             return null;
         }
 
-        var data = WallClock.LocalDate(from, zone);
+        var date = WallClock.LocalDate(from, zone);
 
-        for (var dia = 0; dia <= 2; dia++)
+        for (var dayOffset = 0; dayOffset <= 2; dayOffset++)
         {
-            var abertura = WallClock.Resolve(data.AddDays(dia).ToDateTime(ActiveFrom!.Value), zone);
-            if (abertura > from)
+            var opening = WallClock.Resolve(date.AddDays(dayOffset).ToDateTime(ActiveFrom!.Value), zone);
+            if (opening > from)
             {
-                return abertura;
+                return opening;
             }
         }
 
@@ -100,11 +100,11 @@ public sealed record IntervalSchedule(
     /// <summary>Short text, e.g. "Every 45 min, 09:00 to 18:00".</summary>
     public string Describe()
     {
-        var texto = Localization.Loc.Format("Sched_Every", FormatEvery());
+        var text = Localization.Loc.Format("Sched_Every", FormatEvery());
 
         return HasWindow
-            ? $"{texto}, {ActiveFrom:HH\\:mm} {Localization.Loc.Get("Sched_WindowSep")} {ActiveTo:HH\\:mm}"
-            : texto;
+            ? $"{text}, {ActiveFrom:HH\\:mm} {Localization.Loc.Get("Sched_WindowSep")} {ActiveTo:HH\\:mm}"
+            : text;
     }
 
     /// <summary>Formats the interval as "45 min", "1h" or "1h30".</summary>
@@ -115,9 +115,9 @@ public sealed record IntervalSchedule(
             return $"{Every.TotalMinutes:0} min";
         }
 
-        var horas = (int)Every.TotalHours;
-        var minutos = Every.Minutes;
+        var hours = (int)Every.TotalHours;
+        var minutes = Every.Minutes;
 
-        return minutos == 0 ? $"{horas}h" : $"{horas}h{minutos:00}";
+        return minutes == 0 ? $"{hours}h" : $"{hours}h{minutes:00}";
     }
 }

@@ -6,21 +6,21 @@ namespace Klaxon.Core.Tests;
 
 public class JsonAlarmStoreTests : IDisposable
 {
-    private readonly string _pasta;
-    private readonly string _arquivo;
+    private readonly string _folder;
+    private readonly string _file;
 
     public JsonAlarmStoreTests()
     {
-        _pasta = Path.Combine(Path.GetTempPath(), "KlaxonTests", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_pasta);
-        _arquivo = Path.Combine(_pasta, "alarms.json");
+        _folder = Path.Combine(Path.GetTempPath(), "KlaxonTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_folder);
+        _file = Path.Combine(_folder, "alarms.json");
     }
 
     public void Dispose()
     {
         try
         {
-            Directory.Delete(_pasta, recursive: true);
+            Directory.Delete(_folder, recursive: true);
         }
         catch (IOException)
         {
@@ -31,20 +31,20 @@ public class JsonAlarmStoreTests : IDisposable
     }
 
     [Fact]
-    public void Arquivo_inexistente_carrega_lista_vazia()
+    public void Missing_file_loads_an_empty_list()
     {
-        var store = new JsonAlarmStore(_arquivo);
+        var store = new JsonAlarmStore(_file);
 
         Assert.Empty(store.Load());
     }
 
     [Fact]
-    public void Round_trip_preserva_o_tipo_de_agenda()
+    public void Round_trip_preserves_the_schedule_type()
     {
         // ISchedule is polymorphic; the "$type" discriminator must round-trip.
-        var store = new JsonAlarmStore(_arquivo);
+        var store = new JsonAlarmStore(_file);
 
-        var originais = new[]
+        var originals = new[]
         {
             Alarm.New("Diário", new DailySchedule(new TimeOnly(7, 0))),
             Alarm.New("Semanal", new WeeklySchedule(WeekDays.Weekdays, new TimeOnly(8, 30)), UrgencyLevel.High),
@@ -56,63 +56,63 @@ public class JsonAlarmStoreTests : IDisposable
                     new DateTimeOffset(2026, 6, 10, 9, 0, 0, TimeSpan.FromHours(-3)))),
         };
 
-        store.Save(originais);
-        var lidos = store.Load();
+        store.Save(originals);
+        var loaded = store.Load();
 
-        Assert.Equal(4, lidos.Count);
-        Assert.Equal<Alarm>(originais, lidos);
-        Assert.IsType<DailySchedule>(lidos[0].Schedule);
-        Assert.IsType<WeeklySchedule>(lidos[1].Schedule);
-        Assert.IsType<OneTimeSchedule>(lidos[2].Schedule);
-        Assert.IsType<IntervalSchedule>(lidos[3].Schedule);
-        Assert.Equal(UrgencyLevel.High, lidos[1].Urgency);
+        Assert.Equal(4, loaded.Count);
+        Assert.Equal<Alarm>(originals, loaded);
+        Assert.IsType<DailySchedule>(loaded[0].Schedule);
+        Assert.IsType<WeeklySchedule>(loaded[1].Schedule);
+        Assert.IsType<OneTimeSchedule>(loaded[2].Schedule);
+        Assert.IsType<IntervalSchedule>(loaded[3].Schedule);
+        Assert.Equal(UrgencyLevel.High, loaded[1].Urgency);
     }
 
     [Fact]
-    public void Lembrete_ciclico_preserva_ancora_faixa_e_regra_de_ausencia()
+    public void Interval_reminder_preserves_anchor_window_and_absence_rule()
     {
-        var store = new JsonAlarmStore(_arquivo);
-        var ancora = new DateTimeOffset(2026, 6, 10, 9, 0, 0, TimeSpan.FromHours(-3));
+        var store = new JsonAlarmStore(_file);
+        var anchor = new DateTimeOffset(2026, 6, 10, 9, 0, 0, TimeSpan.FromHours(-3));
 
         var original = Alarm.New(
             "Beber água",
-            new IntervalSchedule(TimeSpan.FromMinutes(45), ancora, new TimeOnly(9, 0), new TimeOnly(18, 0)),
+            new IntervalSchedule(TimeSpan.FromMinutes(45), anchor, new TimeOnly(9, 0), new TimeOnly(18, 0)),
             UrgencyLevel.Whisper) with
         {
             SkipIfIdleFor = TimeSpan.FromMinutes(5),
         };
 
         store.Save([original]);
-        var lido = store.Load().Single();
+        var loaded = store.Load().Single();
 
-        Assert.Equal(original, lido);
+        Assert.Equal(original, loaded);
 
-        var agenda = Assert.IsType<IntervalSchedule>(lido.Schedule);
+        var schedule = Assert.IsType<IntervalSchedule>(loaded.Schedule);
 
         // The anchor must round-trip so the cycle survives an app restart.
-        Assert.Equal(ancora, agenda.Anchor);
-        Assert.Equal(new TimeOnly(9, 0), agenda.ActiveFrom);
-        Assert.Equal(TimeSpan.FromMinutes(5), lido.SkipIfIdleFor);
+        Assert.Equal(anchor, schedule.Anchor);
+        Assert.Equal(new TimeOnly(9, 0), schedule.ActiveFrom);
+        Assert.Equal(TimeSpan.FromMinutes(5), loaded.SkipIfIdleFor);
     }
 
     [Fact]
-    public void Salvar_por_cima_deixa_backup_da_versao_anterior()
+    public void Saving_over_leaves_a_backup_of_the_previous_version()
     {
-        var store = new JsonAlarmStore(_arquivo);
+        var store = new JsonAlarmStore(_file);
 
         store.Save([Alarm.New("Primeiro", new DailySchedule(new TimeOnly(7, 0)))]);
         store.Save([Alarm.New("Segundo", new DailySchedule(new TimeOnly(8, 0)))]);
 
-        Assert.True(File.Exists(_arquivo + ".bak"), "A gravação atômica deve deixar um .bak.");
-        Assert.False(File.Exists(_arquivo + ".tmp"), "O temporário não pode sobrar.");
+        Assert.True(File.Exists(_file + ".bak"), "The atomic write must leave a .bak.");
+        Assert.False(File.Exists(_file + ".tmp"), "The temp file must not be left behind.");
         Assert.Equal("Segundo", store.Load().Single().Title);
     }
 
     [Fact]
-    public void Nao_grava_propriedades_calculadas_no_arquivo()
+    public void Does_not_write_computed_properties_to_the_file()
     {
         // Derived (computed) members must not be serialized.
-        var store = new JsonAlarmStore(_arquivo);
+        var store = new JsonAlarmStore(_file);
 
         store.Save(
         [
@@ -122,7 +122,7 @@ public class JsonAlarmStoreTests : IDisposable
                 UrgencyLevel.High),
         ]);
 
-        var json = File.ReadAllText(_arquivo);
+        var json = File.ReadAllText(_file);
 
         Assert.DoesNotContain("\"Profile\"", json);
         Assert.DoesNotContain("\"EffectiveSound\"", json);
@@ -137,25 +137,25 @@ public class JsonAlarmStoreTests : IDisposable
     }
 
     [Fact]
-    public void Arquivo_corrompido_vai_para_quarentena_em_vez_de_ser_sobrescrito()
+    public void Corrupt_file_is_quarantined_instead_of_overwritten()
     {
-        File.WriteAllText(_arquivo, "{ isto não é json válido");
+        File.WriteAllText(_file, "{ isto não é json válido");
 
-        var store = new JsonAlarmStore(_arquivo);
-        var lidos = store.Load();
+        var store = new JsonAlarmStore(_file);
+        var loaded = store.Load();
 
-        Assert.Empty(lidos);
-        Assert.False(File.Exists(_arquivo), "O arquivo ilegível deve sair do caminho.");
+        Assert.Empty(loaded);
+        Assert.False(File.Exists(_file), "The unreadable file must be moved aside.");
 
-        var quarentena = Directory.GetFiles(_pasta, "alarms.json.corrompido-*");
-        Assert.Single(quarentena);
-        Assert.Contains("isto não é json válido", File.ReadAllText(quarentena[0]));
+        var quarantine = Directory.GetFiles(_folder, "alarms.json.corrompido-*");
+        Assert.Single(quarantine);
+        Assert.Contains("isto não é json válido", File.ReadAllText(quarantine[0]));
     }
 
     [Fact]
-    public void Alarme_desligado_e_com_mensagem_sobrevive_ao_round_trip()
+    public void Disabled_alarm_with_message_survives_the_round_trip()
     {
-        var store = new JsonAlarmStore(_arquivo);
+        var store = new JsonAlarmStore(_file);
 
         var original = Alarm.New("Alongar", new DailySchedule(new TimeOnly(15, 0)), UrgencyLevel.Whisper) with
         {
@@ -165,10 +165,10 @@ public class JsonAlarmStoreTests : IDisposable
         };
 
         store.Save([original]);
-        var lido = store.Load().Single();
+        var loaded = store.Load().Single();
 
-        Assert.Equal(original, lido);
-        Assert.False(lido.IsEnabled);
-        Assert.Equal(@"C:\sons\gongo.wav", lido.CustomSoundPath);
+        Assert.Equal(original, loaded);
+        Assert.False(loaded.IsEnabled);
+        Assert.Equal(@"C:\sons\gongo.wav", loaded.CustomSoundPath);
     }
 }

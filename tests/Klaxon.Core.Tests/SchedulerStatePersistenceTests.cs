@@ -6,209 +6,209 @@ namespace Klaxon.Core.Tests;
 /// <summary>Snooze/escalation survive a restart via CaptureState/RestoreState.</summary>
 public class SchedulerStatePersistenceTests
 {
-    private static DateTimeOffset Utc(int ano, int mes, int dia, int hora, int min = 0) =>
-        new(ano, mes, dia, hora, min, 0, TimeSpan.Zero);
+    private static DateTimeOffset Utc(int year, int month, int day, int hour, int min = 0) =>
+        new(year, month, day, hour, min, 0, TimeSpan.Zero);
 
-    private static Alarm Diario(UrgencyLevel nivel = UrgencyLevel.Normal) =>
-        Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)), nivel);
+    private static Alarm Daily(UrgencyLevel level = UrgencyLevel.Normal) =>
+        Alarm.New("Reunião", new DailySchedule(new TimeOnly(7, 0)), level);
 
-    private static Alarm Escalavel(TimeSpan aposIgnorar) =>
-        Diario() with
+    private static Alarm Escalatable(TimeSpan afterIgnored) =>
+        Daily() with
         {
-            Escalation = new EscalationPolicy { AfterIgnoredFor = aposIgnorar, Ceiling = UrgencyLevel.Critical },
+            Escalation = new EscalationPolicy { AfterIgnoredFor = afterIgnored, Ceiling = UrgencyLevel.Critical },
         };
 
     /// <summary>Builds a scheduler with the given alarms already loaded.</summary>
-    private static (AlarmScheduler Scheduler, FakeClock Clock, List<AlarmTriggeredEventArgs> Disparos) Montar(
-        DateTimeOffset inicio,
-        params Alarm[] alarmes)
+    private static (AlarmScheduler Scheduler, FakeClock Clock, List<AlarmTriggeredEventArgs> Fired) Build(
+        DateTimeOffset start,
+        params Alarm[] alarms)
     {
-        var clock = new FakeClock(inicio);
+        var clock = new FakeClock(start);
         var scheduler = new AlarmScheduler(clock);
-        var disparos = new List<AlarmTriggeredEventArgs>();
+        var fired = new List<AlarmTriggeredEventArgs>();
 
-        scheduler.Triggered += (_, e) => disparos.Add(e);
-        scheduler.Reload(alarmes);
+        scheduler.Triggered += (_, e) => fired.Add(e);
+        scheduler.Reload(alarms);
 
-        return (scheduler, clock, disparos);
+        return (scheduler, clock, fired);
     }
 
     [Fact]
-    public void Capturar_traz_o_adiamento_pendente_com_contador()
+    public void Capture_includes_the_pending_snooze_with_counter()
     {
-        var alarme = Diario();
-        var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Daily();
+        var (scheduler, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
-        scheduler.Tick(); // dispara às 7:00
-        Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(10), out _));
+        scheduler.Tick(); // fires at 7:00
+        Assert.True(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(10), out _));
 
-        var estado = scheduler.CaptureState();
+        var state = scheduler.CaptureState();
 
-        var soneca = Assert.Single(estado.Snoozes);
-        Assert.Equal(alarme.Id, soneca.AlarmId);
-        Assert.Equal(1, soneca.Count);
-        Assert.Equal(Utc(2026, 6, 10, 7, 10), soneca.DueAt);
+        var snooze = Assert.Single(state.Snoozes);
+        Assert.Equal(alarm.Id, snooze.AlarmId);
+        Assert.Equal(1, snooze.Count);
+        Assert.Equal(Utc(2026, 6, 10, 7, 10), snooze.DueAt);
     }
 
     [Fact]
-    public void Restaurar_recoloca_o_contador_de_adiamentos()
+    public void Restore_puts_back_the_snooze_counter()
     {
-        var alarme = Diario();
-        var (antigo, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Daily();
+        var (old, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
-        antigo.Tick();
-        Assert.True(antigo.TrySnooze(alarme.Id, TimeSpan.FromMinutes(10), out _));
-        var estado = antigo.CaptureState();
+        old.Tick();
+        Assert.True(old.TrySnooze(alarm.Id, TimeSpan.FromMinutes(10), out _));
+        var state = old.CaptureState();
 
         // "Restart": a fresh scheduler reloads the alarms, then restores the state.
-        var novoClock = new FakeClock(Utc(2026, 6, 10, 7, 5));
-        var novo = new AlarmScheduler(novoClock);
-        novo.Reload([alarme]);
-        novo.RestoreState(estado);
+        var freshClock = new FakeClock(Utc(2026, 6, 10, 7, 5));
+        var fresh = new AlarmScheduler(freshClock);
+        fresh.Reload([alarm]);
+        fresh.RestoreState(state);
 
-        Assert.Equal(1, novo.SnoozeCountFor(alarme.Id));
+        Assert.Equal(1, fresh.SnoozeCountFor(alarm.Id));
     }
 
     [Fact]
-    public void Adiamento_pendente_dispara_no_primeiro_tique_apos_reiniciar()
+    public void Pending_snooze_fires_on_the_first_tick_after_restart()
     {
-        var alarme = Diario();
-        var (antigo, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Daily();
+        var (old, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
-        antigo.Tick();
-        Assert.True(antigo.TrySnooze(alarme.Id, TimeSpan.FromMinutes(10), out _)); // volta às 7:10
-        var estado = antigo.CaptureState();
+        old.Tick();
+        Assert.True(old.TrySnooze(alarm.Id, TimeSpan.FromMinutes(10), out _)); // returns at 7:10
+        var state = old.CaptureState();
 
         // Restart at 7:15: the snooze came due while the app was closed.
-        var novoClock = new FakeClock(Utc(2026, 6, 10, 7, 15));
-        var novo = new AlarmScheduler(novoClock);
-        var disparos = new List<AlarmTriggeredEventArgs>();
-        novo.Triggered += (_, e) => disparos.Add(e);
-        novo.Reload([alarme]);
-        novo.RestoreState(estado);
+        var freshClock = new FakeClock(Utc(2026, 6, 10, 7, 15));
+        var fresh = new AlarmScheduler(freshClock);
+        var fired = new List<AlarmTriggeredEventArgs>();
+        fresh.Triggered += (_, e) => fired.Add(e);
+        fresh.Reload([alarm]);
+        fresh.RestoreState(state);
 
-        novo.Tick();
+        fresh.Tick();
 
-        var disparo = Assert.Single(disparos);
-        Assert.Equal(TriggerKind.Snooze, disparo.Kind);
-        Assert.Equal(alarme.Id, disparo.Alarm.Id);
+        var trigger = Assert.Single(fired);
+        Assert.Equal(TriggerKind.Snooze, trigger.Kind);
+        Assert.Equal(alarm.Id, trigger.Alarm.Id);
     }
 
     [Fact]
-    public void Escalada_continua_do_nivel_salvo_apos_reiniciar()
+    public void Escalation_resumes_from_the_saved_level_after_restart()
     {
-        var alarme = Escalavel(TimeSpan.FromMinutes(10));
-        var (antigo, clock, disparos) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Escalatable(TimeSpan.FromMinutes(10));
+        var (old, clock, fired) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
-        antigo.Tick(); // 7:00, Normal
+        old.Tick(); // 7:00, Normal
         clock.Advance(TimeSpan.FromMinutes(10));
-        antigo.Tick(); // sobe para High
-        Assert.Equal(UrgencyLevel.High, disparos[^1].EffectiveUrgency);
+        old.Tick(); // rises to High
+        Assert.Equal(UrgencyLevel.High, fired[^1].EffectiveUrgency);
 
-        var estado = antigo.CaptureState();
-        var escalada = Assert.Single(estado.Escalations);
-        Assert.Equal(UrgencyLevel.High, escalada.Level);
+        var state = old.CaptureState();
+        var escalation = Assert.Single(state.Escalations);
+        Assert.Equal(UrgencyLevel.High, escalation.Level);
 
         // Restart: escalation resumes from High and rises to Critical.
-        var novoClock = new FakeClock(Utc(2026, 6, 10, 7, 20));
-        var novo = new AlarmScheduler(novoClock);
-        var novosDisparos = new List<AlarmTriggeredEventArgs>();
-        novo.Triggered += (_, e) => novosDisparos.Add(e);
-        novo.Reload([alarme]);
-        novo.RestoreState(estado);
+        var freshClock = new FakeClock(Utc(2026, 6, 10, 7, 20));
+        var fresh = new AlarmScheduler(freshClock);
+        var freshFired = new List<AlarmTriggeredEventArgs>();
+        fresh.Triggered += (_, e) => freshFired.Add(e);
+        fresh.Reload([alarm]);
+        fresh.RestoreState(state);
 
-        novo.Tick();
+        fresh.Tick();
 
-        var subida = Assert.Single(novosDisparos, d => d.Kind == TriggerKind.Escalation);
-        Assert.Equal(UrgencyLevel.Critical, subida.EffectiveUrgency);
+        var escalated = Assert.Single(freshFired, d => d.Kind == TriggerKind.Escalation);
+        Assert.Equal(UrgencyLevel.Critical, escalated.EffectiveUrgency);
     }
 
     [Fact]
-    public void Restaurar_ignora_estado_de_alarme_que_nao_existe_mais()
+    public void Restore_ignores_state_for_an_alarm_that_no_longer_exists()
     {
-        var alarme = Diario();
-        var estado = new SchedulerState
+        var alarm = Daily();
+        var state = new SchedulerState
         {
             Snoozes = [new SnoozeState(Guid.NewGuid(), 3, Utc(2026, 6, 10, 7, 10))],
         };
 
-        var (scheduler, _, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
-        scheduler.RestoreState(estado);
+        var (scheduler, _, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
+        scheduler.RestoreState(state);
 
         // The orphan snooze was dropped, so nothing extra is pending.
         Assert.True(scheduler.CaptureState().IsEmpty);
     }
 
     [Fact]
-    public void Restaurar_descarta_escalada_quando_a_politica_foi_removida()
+    public void Restore_drops_escalation_when_the_policy_was_removed()
     {
         // The alarm still exists but no longer escalates: the saved escalation is dropped.
-        var alarme = Diario();
-        var estado = new SchedulerState
+        var alarm = Daily();
+        var state = new SchedulerState
         {
-            Escalations = [new EscalationSnapshot(alarme.Id, UrgencyLevel.Critical, Utc(2026, 6, 10, 7, 10))],
+            Escalations = [new EscalationSnapshot(alarm.Id, UrgencyLevel.Critical, Utc(2026, 6, 10, 7, 10))],
         };
 
-        var (scheduler, _, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
-        scheduler.RestoreState(estado);
+        var (scheduler, _, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
+        scheduler.RestoreState(state);
 
         Assert.Empty(scheduler.CaptureState().Escalations);
     }
 
     [Fact]
-    public void Dispensar_deixa_o_estado_vazio()
+    public void Dismiss_leaves_the_state_empty()
     {
-        var alarme = Diario();
-        var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Daily();
+        var (scheduler, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
-        Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(10), out _));
+        Assert.True(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(10), out _));
 
-        scheduler.Dismiss(alarme.Id);
+        scheduler.Dismiss(alarm.Id);
 
         Assert.True(scheduler.CaptureState().IsEmpty);
     }
 
     [Fact]
-    public void Adiar_emite_StateChanged()
+    public void Snooze_raises_StateChanged()
     {
-        var alarme = Diario();
-        var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Daily();
+        var (scheduler, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
-        var mudou = 0;
-        scheduler.StateChanged += (_, _) => mudou++;
+        var changed = 0;
+        scheduler.StateChanged += (_, _) => changed++;
 
         clock.Advance(TimeSpan.FromHours(1));
-        scheduler.Tick(); // nova ocorrência já mexe no estado
-        var aposTick = mudou;
+        scheduler.Tick(); // a new occurrence already touches the state
+        var afterTick = changed;
 
-        Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(10), out _));
+        Assert.True(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(10), out _));
 
-        Assert.True(mudou > aposTick, "Adiar deve emitir StateChanged.");
+        Assert.True(changed > afterTick, "Snoozing must raise StateChanged.");
     }
 
     [Fact]
-    public void Remover_alarme_no_reload_emite_StateChanged_para_limpar_o_disco()
+    public void Removing_an_alarm_on_reload_raises_StateChanged_to_clear_disk()
     {
-        var alarme = Diario();
-        var (scheduler, clock, _) = Montar(Utc(2026, 6, 10, 6, 0), alarme);
+        var alarm = Daily();
+        var (scheduler, clock, _) = Build(Utc(2026, 6, 10, 6, 0), alarm);
 
         clock.Advance(TimeSpan.FromHours(1));
         scheduler.Tick();
-        Assert.True(scheduler.TrySnooze(alarme.Id, TimeSpan.FromMinutes(10), out _));
+        Assert.True(scheduler.TrySnooze(alarm.Id, TimeSpan.FromMinutes(10), out _));
 
-        var mudou = 0;
-        scheduler.StateChanged += (_, _) => mudou++;
+        var changed = 0;
+        scheduler.StateChanged += (_, _) => changed++;
 
         // The alarm is gone: Reload drops its snooze and must persist the removal.
         scheduler.Reload([]);
 
-        Assert.True(mudou > 0, "Descartar órfãos no Reload deve emitir StateChanged.");
+        Assert.True(changed > 0, "Dropping orphans on Reload must raise StateChanged.");
         Assert.True(scheduler.CaptureState().IsEmpty);
     }
 }

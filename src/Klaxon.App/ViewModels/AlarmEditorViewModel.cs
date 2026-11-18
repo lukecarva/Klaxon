@@ -56,17 +56,17 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
     private readonly Guid _id;
 
     /// <summary>Cycle anchor of the edited alarm, if it had one.</summary>
-    private readonly DateTimeOffset? _ancoraOriginal;
+    private readonly DateTimeOffset? _originalAnchor;
 
     /// <summary>Interval the alarm had when opened.</summary>
-    private readonly TimeSpan? _intervaloOriginal;
+    private readonly TimeSpan? _originalInterval;
 
-    public AlarmEditorViewModel(ISystemClock clock, Alarm? existente = null)
+    public AlarmEditorViewModel(ISystemClock clock, Alarm? existing = null)
     {
         _clock = clock;
-        _id = existente?.Id ?? Guid.NewGuid();
+        _id = existing?.Id ?? Guid.NewGuid();
 
-        IsNew = existente is null;
+        IsNew = existing is null;
 
         Days =
         [
@@ -82,31 +82,31 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
         Urgencies = [.. UrgencyProfiles.All.Select(p => new UrgencyChoice { Profile = p })];
 
         // Default to a near-future rounded time so a one-time alarm is not born in the past.
-        var sugestao = ProximoHorarioRedondo(_clock);
-        _dateText = sugestao.ToString(DatePattern, Culture);
-        _timeText = sugestao.ToString("HH:mm", Culture);
+        var suggestion = NextRoundTime(_clock);
+        _dateText = suggestion.ToString(DatePattern, Culture);
+        _timeText = suggestion.ToString("HH:mm", Culture);
 
-        if (existente is null)
+        if (existing is null)
         {
             SelectUrgency(UrgencyLevel.Normal);
             Kind = ScheduleKind.Daily;
             return;
         }
 
-        _title = existente.Title;
-        _message = existente.Message ?? string.Empty;
-        _customSoundPath = existente.CustomSoundPath ?? string.Empty;
-        _skipWhenAway = existente.SkipIfIdleFor is not null;
-        _escalate = existente.Escalation is not null;
-        SelectUrgency(existente.Urgency);
+        _title = existing.Title;
+        _message = existing.Message ?? string.Empty;
+        _customSoundPath = existing.CustomSoundPath ?? string.Empty;
+        _skipWhenAway = existing.SkipIfIdleFor is not null;
+        _escalate = existing.Escalation is not null;
+        SelectUrgency(existing.Urgency);
 
-        if (existente.Schedule is IntervalSchedule intervalo)
+        if (existing.Schedule is IntervalSchedule interval)
         {
-            _ancoraOriginal = intervalo.Anchor;
-            _intervaloOriginal = intervalo.Every;
+            _originalAnchor = interval.Anchor;
+            _originalInterval = interval.Every;
         }
 
-        LoadSchedule(existente.Schedule);
+        LoadSchedule(existing.Schedule);
     }
 
     /// <summary>Whether this is a new alarm.</summary>
@@ -206,37 +206,37 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
     public event Action<string>? ValidationFailed;
 
     /// <summary>Now plus a small buffer, rounded up to the next 5 minutes.</summary>
-    private static DateTime ProximoHorarioRedondo(ISystemClock clock)
+    private static DateTime NextRoundTime(ISystemClock clock)
     {
-        var agora = TimeZoneInfo.ConvertTime(clock.Now, clock.LocalTimeZone).DateTime;
+        var now = TimeZoneInfo.ConvertTime(clock.Now, clock.LocalTimeZone).DateTime;
 
-        var alvo = agora.AddSeconds(30);
-        alvo = alvo.AddTicks(-(alvo.Ticks % TimeSpan.TicksPerMinute)); // drop seconds
+        var target = now.AddSeconds(30);
+        target = target.AddTicks(-(target.Ticks % TimeSpan.TicksPerMinute)); // drop seconds
 
-        var resto = alvo.Minute % 5;
-        if (resto != 0)
+        var remainder = target.Minute % 5;
+        if (remainder != 0)
         {
-            alvo = alvo.AddMinutes(5 - resto);
+            target = target.AddMinutes(5 - remainder);
         }
-        else if (alvo <= agora)
+        else if (target <= now)
         {
-            alvo = alvo.AddMinutes(5);
+            target = target.AddMinutes(5);
         }
 
-        return alvo;
+        return target;
     }
 
     /// <summary>Validates and, on success, produces the alarm and closes.</summary>
     [RelayCommand]
     private void Save()
     {
-        if (!TryBuild(out var alarme, out var erro))
+        if (!TryBuild(out var alarm, out var error))
         {
-            ValidationFailed?.Invoke(erro ?? Loc.Get("Val_SaveFailed"));
+            ValidationFailed?.Invoke(error ?? Loc.Get("Val_SaveFailed"));
             return;
         }
 
-        Result = alarme;
+        Result = alarm;
         CloseRequested?.Invoke(true);
     }
 
@@ -248,16 +248,16 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
     [RelayCommand]
     private void BrowseSound()
     {
-        var dialogo = new Microsoft.Win32.OpenFileDialog
+        var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = Loc.Get("Editor_SoundDialogTitle"),
             Filter = Loc.Get("Editor_SoundFilter"),
             CheckFileExists = true,
         };
 
-        if (dialogo.ShowDialog() == true)
+        if (dialog.ShowDialog() == true)
         {
-            CustomSoundPath = dialogo.FileName;
+            CustomSoundPath = dialog.FileName;
         }
     }
 
@@ -266,115 +266,115 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
     private void ClearSound() => CustomSoundPath = string.Empty;
 
     /// <summary>Validates the fields and builds the alarm, or returns an error.</summary>
-    private bool TryBuild(out Alarm? alarme, out string? erro)
+    private bool TryBuild(out Alarm? alarm, out string? error)
     {
-        alarme = null;
-        erro = null;
+        alarm = null;
+        error = null;
 
         if (string.IsNullOrWhiteSpace(Title))
         {
-            erro = Loc.Get("Val_NeedName");
+            error = Loc.Get("Val_NeedName");
             return false;
         }
 
-        var hora = default(TimeOnly);
+        var time = default(TimeOnly);
 
-        if (HasFixedTime && !TimeOnly.TryParseExact(TimeText.Trim(), "HH\\:mm", Culture, DateTimeStyles.None, out hora))
+        if (HasFixedTime && !TimeOnly.TryParseExact(TimeText.Trim(), "HH\\:mm", Culture, DateTimeStyles.None, out time))
         {
-            erro = Loc.Get("Val_BadTime");
+            error = Loc.Get("Val_BadTime");
             return false;
         }
 
-        ISchedule agenda;
+        ISchedule schedule;
 
         switch (Kind)
         {
             case ScheduleKind.Interval:
-                if (!int.TryParse(IntervalMinutesText.Trim(), out var minutos) || minutos < 1)
+                if (!int.TryParse(IntervalMinutesText.Trim(), out var minutes) || minutes < 1)
                 {
-                    erro = Loc.Get("Val_BadInterval");
+                    error = Loc.Get("Val_BadInterval");
                     return false;
                 }
 
-                TimeOnly? de = null;
-                TimeOnly? ate = null;
+                TimeOnly? from = null;
+                TimeOnly? to = null;
 
                 if (UseWindow)
                 {
-                    if (!TimeOnly.TryParseExact(WindowFromText.Trim(), "HH\\:mm", Culture, DateTimeStyles.None, out var inicio) ||
-                        !TimeOnly.TryParseExact(WindowToText.Trim(), "HH\\:mm", Culture, DateTimeStyles.None, out var fim))
+                    if (!TimeOnly.TryParseExact(WindowFromText.Trim(), "HH\\:mm", Culture, DateTimeStyles.None, out var start) ||
+                        !TimeOnly.TryParseExact(WindowToText.Trim(), "HH\\:mm", Culture, DateTimeStyles.None, out var end))
                     {
-                        erro = Loc.Get("Val_BadWindow");
+                        error = Loc.Get("Val_BadWindow");
                         return false;
                     }
 
-                    if (inicio == fim)
+                    if (start == end)
                     {
-                        erro = Loc.Get("Val_WindowEqual");
+                        error = Loc.Get("Val_WindowEqual");
                         return false;
                     }
 
-                    de = inicio;
-                    ate = fim;
+                    from = start;
+                    to = end;
                 }
 
                 // Keep the running cycle's anchor unless the interval changed.
-                var novoIntervalo = TimeSpan.FromMinutes(minutos);
-                var ancora = novoIntervalo == _intervaloOriginal && _ancoraOriginal is not null
-                    ? _ancoraOriginal.Value
+                var newInterval = TimeSpan.FromMinutes(minutes);
+                var anchor = newInterval == _originalInterval && _originalAnchor is not null
+                    ? _originalAnchor.Value
                     : _clock.Now;
 
-                agenda = new IntervalSchedule(novoIntervalo, ancora, de, ate);
+                schedule = new IntervalSchedule(newInterval, anchor, from, to);
                 break;
 
             case ScheduleKind.Once:
-                if (!DateOnly.TryParseExact(DateText.Trim(), DatePattern, Culture, DateTimeStyles.None, out var data))
+                if (!DateOnly.TryParseExact(DateText.Trim(), DatePattern, Culture, DateTimeStyles.None, out var date))
                 {
-                    erro = Loc.Format("Val_BadDate", DatePattern);
+                    error = Loc.Format("Val_BadDate", DatePattern);
                     return false;
                 }
 
-                var quando = new DateTimeOffset(
-                    data.ToDateTime(hora),
-                    _clock.LocalTimeZone.GetUtcOffset(data.ToDateTime(hora)));
+                var when = new DateTimeOffset(
+                    date.ToDateTime(time),
+                    _clock.LocalTimeZone.GetUtcOffset(date.ToDateTime(time)));
 
-                if (quando <= _clock.Now)
+                if (when <= _clock.Now)
                 {
-                    erro = Loc.Get("Val_PastInstant");
+                    error = Loc.Get("Val_PastInstant");
                     return false;
                 }
 
-                agenda = new OneTimeSchedule(quando);
+                schedule = new OneTimeSchedule(when);
                 break;
 
             case ScheduleKind.Weekly:
-                var dias = Days
+                var days = Days
                     .Where(d => d.IsChecked)
-                    .Aggregate(WeekDays.None, (acumulado, d) => acumulado | d.Flag);
+                    .Aggregate(WeekDays.None, (acc, d) => acc | d.Flag);
 
-                if (dias == WeekDays.None)
+                if (days == WeekDays.None)
                 {
-                    erro = Loc.Get("Val_NeedWeekday");
+                    error = Loc.Get("Val_NeedWeekday");
                     return false;
                 }
 
-                agenda = new WeeklySchedule(dias, hora);
+                schedule = new WeeklySchedule(days, time);
                 break;
 
             default:
-                agenda = new DailySchedule(hora);
+                schedule = new DailySchedule(time);
                 break;
         }
 
-        var urgencia = Urgencies.FirstOrDefault(u => u.IsChecked)?.Profile.Level ?? UrgencyLevel.Normal;
+        var urgency = Urgencies.FirstOrDefault(u => u.IsChecked)?.Profile.Level ?? UrgencyLevel.Normal;
 
-        alarme = new Alarm
+        alarm = new Alarm
         {
             Id = _id,
             Title = Title.Trim(),
             Message = string.IsNullOrWhiteSpace(Message) ? null : Message.Trim(),
-            Schedule = agenda,
-            Urgency = urgencia,
+            Schedule = schedule,
+            Urgency = urgency,
             CustomSoundPath = string.IsNullOrWhiteSpace(CustomSoundPath) ? null : CustomSoundPath.Trim(),
             SkipIfIdleFor = SkipWhenAway ? IdleThreshold : null,
             Escalation = Escalate ? EscalationPolicy.Default : null,
@@ -386,16 +386,16 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
     /// <summary>Checks the urgency choice matching the level.</summary>
     private void SelectUrgency(UrgencyLevel level)
     {
-        foreach (var opcao in Urgencies)
+        foreach (var choice in Urgencies)
         {
-            opcao.IsChecked = opcao.Profile.Level == level;
+            choice.IsChecked = choice.Profile.Level == level;
         }
     }
 
     /// <summary>Fills the fields from an existing schedule.</summary>
-    private void LoadSchedule(ISchedule agenda)
+    private void LoadSchedule(ISchedule schedule)
     {
-        switch (agenda)
+        switch (schedule)
         {
             case OneTimeSchedule once:
                 Kind = ScheduleKind.Once;
@@ -407,9 +407,9 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
             case WeeklySchedule weekly:
                 Kind = ScheduleKind.Weekly;
                 TimeText = weekly.At.ToString("HH\\:mm");
-                foreach (var dia in Days)
+                foreach (var day in Days)
                 {
-                    dia.IsChecked = (weekly.Days & dia.Flag) != 0;
+                    day.IsChecked = (weekly.Days & day.Flag) != 0;
                 }
 
                 break;
@@ -419,15 +419,15 @@ public sealed partial class AlarmEditorViewModel : ObservableObject
                 TimeText = daily.At.ToString("HH\\:mm");
                 break;
 
-            case IntervalSchedule intervalo:
+            case IntervalSchedule interval:
                 Kind = ScheduleKind.Interval;
-                IntervalMinutesText = ((int)intervalo.Every.TotalMinutes).ToString(Culture);
-                UseWindow = intervalo.HasWindow;
+                IntervalMinutesText = ((int)interval.Every.TotalMinutes).ToString(Culture);
+                UseWindow = interval.HasWindow;
 
-                if (intervalo.HasWindow)
+                if (interval.HasWindow)
                 {
-                    WindowFromText = intervalo.ActiveFrom!.Value.ToString("HH\\:mm");
-                    WindowToText = intervalo.ActiveTo!.Value.ToString("HH\\:mm");
+                    WindowFromText = interval.ActiveFrom!.Value.ToString("HH\\:mm");
+                    WindowToText = interval.ActiveTo!.Value.ToString("HH\\:mm");
                 }
 
                 break;

@@ -8,29 +8,29 @@ public static class TestZones
 
     private static TimeZoneInfo BuildSouthernDst()
     {
-        var inicio = TimeZoneInfo.TransitionTime.CreateFixedDateRule(
+        var start = TimeZoneInfo.TransitionTime.CreateFixedDateRule(
             timeOfDay: new DateTime(1, 1, 1, 0, 0, 0),
             month: 10,
             day: 15);
 
-        var fim = TimeZoneInfo.TransitionTime.CreateFixedDateRule(
+        var end = TimeZoneInfo.TransitionTime.CreateFixedDateRule(
             timeOfDay: new DateTime(1, 1, 1, 0, 0, 0),
             month: 2,
             day: 15);
 
-        var regra = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule(
+        var rule = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule(
             dateStart: DateTime.MinValue.Date,
             dateEnd: DateTime.MaxValue.Date,
             daylightDelta: TimeSpan.FromHours(1),
-            daylightTransitionStart: inicio,
-            daylightTransitionEnd: fim);
+            daylightTransitionStart: start,
+            daylightTransitionEnd: end);
 
         return TimeZoneInfo.CreateCustomTimeZone(
-            id: "Teste/HorarioDeVerao",
+            id: "Test/DaylightSaving",
             baseUtcOffset: TimeSpan.FromHours(-3),
-            displayName: "Teste (horário de verão)",
-            standardDisplayName: "Padrão de Teste",
-            daylightDisplayName: "Verão de Teste",
-            adjustmentRules: [regra]);
+            displayName: "Test (daylight saving)",
+            standardDisplayName: "Test Standard",
+            daylightDisplayName: "Test Daylight",
+            adjustmentRules: [rule]);
     }
 }
