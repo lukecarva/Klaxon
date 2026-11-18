@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Gera o instalador do Despertador Produtivo do zero.
+  Gera o instalador do Klaxon do zero.
 
 .DESCRIPTION
   Faz o publish framework-dependent (um único .exe enxuto, ~5 MB, que usa o
@@ -24,7 +24,7 @@ $ErrorActionPreference = 'Stop'
 
 $buildDir = $PSScriptRoot
 $repoRoot = Split-Path $buildDir -Parent
-$projeto = Join-Path $repoRoot 'src\AlarmClock.App\AlarmClock.App.csproj'
+$projeto = Join-Path $repoRoot 'src\Klaxon.App\Klaxon.App.csproj'
 $publishDir = Join-Path $buildDir 'publish'
 $iss = Join-Path $buildDir 'installer.iss'
 

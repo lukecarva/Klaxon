@@ -1,11 +1,11 @@
-; Instalador do Despertador Produtivo — Inno Setup. Bilíngue (EN/PT-BR).
+; Instalador do Klaxon — Inno Setup. Bilíngue (EN/PT-BR).
 ; Instalação por usuário (sem admin): cai em %LOCALAPPDATA%\Programs.
 ; Compile com: iscc build\installer.iss  (a partir da raiz do repositório)
 
-#define AppFolder "Despertador Produtivo"
+#define AppFolder "Klaxon"
 #define AppVersion "0.2.0"
 #define AppPublisher "Lucas"
-#define AppExe "DespertadorProdutivo.exe"
+#define AppExe "Klaxon.exe"
 
 [Setup]
 ; AppId identifica o produto entre versões — nunca mudar depois de publicado,
@@ -28,13 +28,13 @@ DisableDirPage=auto
 
 ; Saída
 OutputDir=dist
-OutputBaseFilename=DespertadorProdutivo-Setup-{#AppVersion}
+OutputBaseFilename=Klaxon-Setup-{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 
 ; Aparência e identidade
 WizardStyle=modern
-SetupIconFile=..\src\AlarmClock.App\Assets\app.ico
+SetupIconFile=..\src\Klaxon.App\Assets\app.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={cm:AppName}
 
@@ -45,16 +45,16 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
 [CustomMessages]
-english.AppName=Productivity Alarm
-brazilianportuguese.AppName=Despertador Produtivo
+english.AppName=Klaxon
+brazilianportuguese.AppName=Klaxon
 english.TaskDesktop=Create a desktop shortcut
 brazilianportuguese.TaskDesktop=Criar um atalho na área de trabalho
 english.TaskStartup=Start the alarm with Windows
 brazilianportuguese.TaskStartup=Iniciar o despertador junto com o Windows
-english.RunApp=Open Productivity Alarm now
-brazilianportuguese.RunApp=Abrir o Despertador Produtivo agora
-english.RuntimeMissing=Productivity Alarm needs the .NET 8 Desktop Runtime (x64), which was not found on this machine.%n%nDownload it from: https://dotnet.microsoft.com/download/dotnet/8.0/runtime (the "Desktop Runtime" option).%n%nContinue the installation anyway?
-brazilianportuguese.RuntimeMissing=O Despertador precisa do .NET 8 Desktop Runtime (x64), que não foi encontrado nesta máquina.%n%nBaixe em: https://dotnet.microsoft.com/download/dotnet/8.0/runtime (opção "Desktop Runtime").%n%nDeseja continuar a instalação mesmo assim?
+english.RunApp=Open Klaxon now
+brazilianportuguese.RunApp=Abrir o Klaxon agora
+english.RuntimeMissing=Klaxon needs the .NET 8 Desktop Runtime (x64), which was not found on this machine.%n%nDownload it from: https://dotnet.microsoft.com/download/dotnet/8.0/runtime (the "Desktop Runtime" option).%n%nContinue the installation anyway?
+brazilianportuguese.RuntimeMissing=O Klaxon precisa do .NET 8 Desktop Runtime (x64), que não foi encontrado nesta máquina.%n%nBaixe em: https://dotnet.microsoft.com/download/dotnet/8.0/runtime (opção "Desktop Runtime").%n%nDeseja continuar a instalação mesmo assim?
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:TaskDesktop}"; Flags: unchecked
@@ -73,7 +73,7 @@ Name: "{autodesktop}\{cm:AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopi
 ; Início automático opcional. Mesmo nome e formato que o app usa no próprio
 ; botão "Iniciar com o Windows", então os dois não brigam — e sai na desinstalação.
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
-    ValueType: string; ValueName: "DespertadorProdutivo"; \
+    ValueType: string; ValueName: "Klaxon"; \
     ValueData: """{app}\{#AppExe}"" --minimized"; \
     Tasks: startup; Flags: uninsdeletevalue
 
@@ -87,7 +87,7 @@ Filename: "{cmd}"; Parameters: "/C taskkill /IM {#AppExe} /F"; Flags: runhidden;
 
 [UninstallDelete]
 ; Remove a pasta do produto (o exe já sai sozinho); dados do usuário em
-; %APPDATA%\AlarmClock são preservados de propósito.
+; %APPDATA%\Klaxon são preservados de propósito.
 Type: dirifempty; Name: "{app}"
 
 [Code]
@@ -144,7 +144,7 @@ begin
   else
     Codigo := 'en';
 
-  Pasta := ExpandConstant('{userappdata}\AlarmClock');
+  Pasta := ExpandConstant('{userappdata}\Klaxon');
   ForceDirectories(Pasta);
   Arquivo := Pasta + '\settings.json';
   SaveStringToFile(Arquivo, '{' + #13#10 + '  "Language": "' + Codigo + '"' + #13#10 + '}' + #13#10, False);

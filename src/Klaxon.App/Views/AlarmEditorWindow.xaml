@@ -1,0 +1,199 @@
+<Window x:Class="Klaxon.App.Views.AlarmEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:Klaxon.App.Localization"
+        Title="{Binding WindowTitle}"
+        Width="520"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Brush.Bg}"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <!-- Scrollable content with the actions fixed at the bottom. | Conteúdo rolável com as ações fixas embaixo. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+        <StackPanel Margin="24,24,24,0">
+
+        <TextBlock Style="{StaticResource Text.Title}" Text="{Binding WindowTitle}" Margin="0,0,0,20" />
+
+        <TextBlock Style="{StaticResource Text.Label}" Text="{loc:Loc Editor_Name}" />
+        <TextBox Style="{StaticResource Field.Text}"
+                 AutomationProperties.AutomationId="CampoNome"
+                 Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock Style="{StaticResource Text.Label}" Text="{loc:Loc Editor_Detail}" Margin="0,16,0,6" />
+        <TextBox Style="{StaticResource Field.Text}"
+                 Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock Style="{StaticResource Text.Label}" Text="{loc:Loc Editor_When}" Margin="0,20,0,6" />
+        <StackPanel Orientation="Horizontal">
+            <RadioButton Style="{StaticResource Chip.Radio}" Content="{loc:Loc Editor_Once}" IsChecked="{Binding IsOnce}" />
+            <RadioButton Style="{StaticResource Chip.Radio}" Content="{loc:Loc Editor_Daily}" IsChecked="{Binding IsDaily}" />
+            <RadioButton Style="{StaticResource Chip.Radio}" Content="{loc:Loc Editor_Weekly}" IsChecked="{Binding IsWeekly}" />
+            <RadioButton Style="{StaticResource Chip.Radio}" Content="{loc:Loc Editor_Interval}" IsChecked="{Binding IsInterval}" />
+        </StackPanel>
+
+        <!-- Interval mode (daily reminders) | Modo por intervalo (lembretes de dia a dia) -->
+        <StackPanel Visibility="{Binding IsInterval, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Style="{StaticResource Text.Body}" VerticalAlignment="Center" Text="{loc:Loc Editor_EveryPre}" />
+                <TextBox Style="{StaticResource Field.Text}"
+                         AutomationProperties.AutomationId="CampoIntervalo"
+                         Width="70"
+                         Margin="8,0"
+                         Text="{Binding IntervalMinutesText, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Style="{StaticResource Text.Body}" VerticalAlignment="Center" Text="{loc:Loc Editor_Minutes}" />
+            </StackPanel>
+
+            <ToggleButton Style="{StaticResource Chip.Toggle}"
+                          Margin="0,10,0,0"
+                          HorizontalAlignment="Left"
+                          Content="{loc:Loc Editor_WindowToggle}"
+                          IsChecked="{Binding UseWindow}" />
+
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding UseWindow, Converter={StaticResource BoolToVis}}">
+                <TextBlock Style="{StaticResource Text.Body}" VerticalAlignment="Center" Text="{loc:Loc Editor_From}" />
+                <TextBox Style="{StaticResource Field.Text}"
+                         Width="80"
+                         Margin="8,0"
+                         Text="{Binding WindowFromText, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Style="{StaticResource Text.Body}" VerticalAlignment="Center" Text="{loc:Loc Editor_To}" />
+                <TextBox Style="{StaticResource Field.Text}"
+                         Width="80"
+                         Margin="8,0,0,0"
+                         Text="{Binding WindowToText, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <TextBlock Style="{StaticResource Text.Caption}"
+                       Margin="0,8,0,0"
+                       Text="{loc:Loc Editor_MidnightNote}" />
+        </StackPanel>
+
+        <!-- Weekdays | Dias da semana -->
+        <ItemsControl ItemsSource="{Binding Days}"
+                      Margin="0,8,0,0"
+                      Visibility="{Binding IsWeekly, Converter={StaticResource BoolToVis}}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <ToggleButton Style="{StaticResource Chip.Toggle}"
+                                  Content="{Binding Label}"
+                                  IsChecked="{Binding IsChecked}"
+                                  MinWidth="44" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Grid Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0"
+                        Margin="0,0,14,0"
+                        Visibility="{Binding IsOnce, Converter={StaticResource BoolToVis}}">
+                <TextBlock Style="{StaticResource Text.Label}" Text="{loc:Loc Editor_Date}" />
+                <TextBox Style="{StaticResource Field.Text}"
+                         Width="120"
+                         Text="{Binding DateText, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Visibility="{Binding HasFixedTime, Converter={StaticResource BoolToVis}}">
+                <TextBlock Style="{StaticResource Text.Label}" Text="{loc:Loc Editor_Time}" />
+                <TextBox Style="{StaticResource Field.Text}"
+                         Width="90"
+                         Text="{Binding TimeText, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Style="{StaticResource Text.Label}" Text="{loc:Loc Editor_Presence}" Margin="0,20,0,6" />
+        <ToggleButton Style="{StaticResource Chip.Toggle}"
+                      HorizontalAlignment="Left"
+                      Content="{loc:Loc Editor_SkipAway}"
+                      IsChecked="{Binding SkipWhenAway}" />
+        <TextBlock Style="{StaticResource Text.Caption}"
+                   Text="{loc:Loc Editor_SkipAwayNote}" />
+
+        <TextBlock Style="{StaticResource Text.Label}" Text="{loc:Loc Editor_Insistence}" Margin="0,20,0,6" />
+        <ToggleButton Style="{StaticResource Chip.Toggle}"
+                      HorizontalAlignment="Left"
+                      Content="{loc:Loc Editor_Escalate}"
+                      IsChecked="{Binding Escalate}" />
+        <TextBlock Style="{StaticResource Text.Caption}"
+                   Text="{loc:Loc Editor_EscalateNote}" />
+
+        <TextBlock Style="{StaticResource Text.Label}" Text="{loc:Loc Editor_Urgency}" Margin="0,20,0,6" />
+        <ItemsControl ItemsSource="{Binding Urgencies}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <!-- Shared GroupName so the radios deselect each other. | GroupName comum para os rádios se desmarcarem entre si. -->
+                    <RadioButton Style="{StaticResource Chip.Radio}"
+                                 GroupName="Urgencia"
+                                 Content="{Binding Label}"
+                                 IsChecked="{Binding IsChecked}" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock Style="{StaticResource Text.Label}" Text="{loc:Loc Editor_Sound}" Margin="0,14,0,6" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0"
+                     Style="{StaticResource Field.Text}"
+                     IsReadOnly="True"
+                     Text="{Binding CustomSoundPath}" />
+            <Button Grid.Column="1"
+                    Style="{StaticResource Button.Ghost}"
+                    Margin="8,0,0,0"
+                    Content="{loc:Loc Editor_SoundChoose}"
+                    Command="{Binding BrowseSoundCommand}" />
+            <Button Grid.Column="2"
+                    Style="{StaticResource Button.Ghost}"
+                    Margin="6,0,0,0"
+                    Content="{loc:Loc Editor_SoundClear}"
+                    Command="{Binding ClearSoundCommand}" />
+        </Grid>
+        <TextBlock Style="{StaticResource Text.Caption}"
+                   Margin="0,6,0,0"
+                   Text="{loc:Loc Editor_SoundNote}" />
+
+        </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="24,18,24,24">
+            <Button Style="{StaticResource Button.Ghost}"
+                    Content="{loc:Loc Editor_Cancel}"
+                    Margin="0,0,8,0"
+                    Command="{Binding CancelCommand}" />
+            <Button Style="{StaticResource Button.Primary}"
+                    Content="{loc:Loc Editor_Save}"
+                    Command="{Binding SaveCommand}"
+                    IsDefault="True" />
+        </StackPanel>
+    </Grid>
+</Window>

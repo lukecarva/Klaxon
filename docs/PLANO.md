@@ -1,4 +1,4 @@
-# Despertador Produtivo — Plano de Projeto
+# Klaxon — Plano de Projeto
 
 App de desktop **Windows** para quem passa muitas horas no PC: alarmes com
 **níveis de urgência**, onde a urgência define *o quão intrusivo* o alerta é —
@@ -52,20 +52,20 @@ Três projetos. A regra é: **o domínio não sabe que WPF existe** — assim o
 agendador é testável sem abrir janela nenhuma.
 
 ```
-AlarmClock.sln
+Klaxon.sln
 ├── src/
-│   ├── AlarmClock.Core/          net8.0          (sem UI, testável)
+│   ├── Klaxon.Core/          net8.0          (sem UI, testável)
 │   │   ├── Model/                Alarm, UrgencyProfile, EscalationPolicy
 │   │   ├── Scheduling/           ISchedule + implementações, AlarmScheduler
 │   │   ├── Persistence/          IAlarmStore, JsonAlarmStore
 │   │   └── Abstractions/         ISystemClock, IAlertPresenter, IIdleDetector
-│   └── AlarmClock.App/           net8.0-windows  (WPF)
+│   └── Klaxon.App/           net8.0-windows  (WPF)
 │       ├── Views/                MainWindow, ToastWindow, ModalAlertWindow, FullscreenOverlay
 │       ├── ViewModels/           MainViewModel, AlarmEditorViewModel, AlertViewModel
 │       ├── Services/             WpfAlertPresenter, AudioPlayer, TrayIcon, StartupRegistrar
 │       └── App.xaml.cs           bootstrap: DI + host + single-instance
 └── tests/
-    └── AlarmClock.Core.Tests/    xUnit + FakeClock
+    └── Klaxon.Core.Tests/    xUnit + FakeClock
 ```
 
 ### Dependências (NuGet, todas leves e estáveis)
@@ -166,7 +166,7 @@ Todo acesso a tempo passa por **`ISystemClock`** injetado. Nos testes usa-se um
 
 ## 5. Persistência
 
-`%APPDATA%\AlarmClock\`
+`%APPDATA%\Klaxon\`
 
 - `alarms.json` — os alarmes
 - `settings.json` — perfis de urgência customizados, autostart, volume, DND

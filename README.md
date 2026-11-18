@@ -1,10 +1,10 @@
-# ⏰ Despertador Produtivo
+# ⏰ Klaxon
 
 [![CI](https://github.com/lukecarva/Alarm-Clock/actions/workflows/ci.yml/badge.svg)](https://github.com/lukecarva/Alarm-Clock/actions/workflows/ci.yml)
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Despertador de bandeja para Windows, pensado para quem passa o dia no PC. A ideia
+Klaxon de bandeja para Windows, pensado para quem passa o dia no PC. A ideia
 central são os **níveis de urgência**: cada alarme define o quão intrusivo é o
 alerta — de um toast silencioso a um overlay em tela cheia que só sai com uma
 ação deliberada. Alarmes ignorados **sobem de nível** sozinhos, e lembretes
@@ -54,11 +54,11 @@ frente do computador.
 
 ## Instalando
 
-Baixe o `DespertadorProdutivo-Setup-<versão>.exe` (ou gere-o abaixo) e execute.
+Baixe o `Klaxon-Setup-<versão>.exe` (ou gere-o abaixo) e execute.
 A instalação é **por usuário, sem admin**: cai em
-`%LOCALAPPDATA%\Programs\Despertador Produtivo`, cria atalho no Menu Iniciar e
+`%LOCALAPPDATA%\Programs\Klaxon`, cria atalho no Menu Iniciar e
 oferece "iniciar com o Windows" e atalho na área de trabalho como opcionais.
-Desinstalar preserva seus dados em `%APPDATA%\AlarmClock`.
+Desinstalar preserva seus dados em `%APPDATA%\Klaxon`.
 
 O assistente começa perguntando o **idioma** (Português ou English) e grava a
 escolha, então o app já abre no idioma certo.
@@ -82,21 +82,21 @@ uma vez (`winget install JRSoftware.InnoSetup`).
 ## Desenvolvimento
 
 ```bash
-dotnet run --project src/AlarmClock.App   # rodar
+dotnet run --project src/Klaxon.App   # rodar
 dotnet test                               # testes (agendador, DST, catch-up…)
 ```
 
 | Projeto | TFM | Papel |
 |---|---|---|
-| `src/AlarmClock.Core` | `net8.0` | Domínio e agendamento. Não conhece WPF — roda nos testes sem UI |
-| `src/AlarmClock.App` | `net8.0-windows` | WPF: bandeja, janelas, áudio, bootstrap |
-| `tests/AlarmClock.Core.Tests` | `net8.0` | xUnit, com `FakeClock` no lugar do relógio real |
+| `src/Klaxon.Core` | `net8.0` | Domínio e agendamento. Não conhece WPF — roda nos testes sem UI |
+| `src/Klaxon.App` | `net8.0-windows` | WPF: bandeja, janelas, áudio, bootstrap |
+| `tests/Klaxon.Core.Tests` | `net8.0` | xUnit, com `FakeClock` no lugar do relógio real |
 
 O desenho e as decisões de projeto estão em **[docs/PLANO.md](docs/PLANO.md)**.
 
 ## Dados
 
-Tudo em `%APPDATA%\AlarmClock`:
+Tudo em `%APPDATA%\Klaxon`:
 
 - `alarms.json` — seus alarmes, em JSON legível e editável à mão (escrita
   atômica; um arquivo corrompido vai para quarentena em vez de ser sobrescrito).
