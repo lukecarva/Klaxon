@@ -91,8 +91,6 @@ dotnet test                           # tests (scheduler, DST, catch-up…)
 | `src/Klaxon.App` | `net8.0-windows` | WPF: tray, windows, audio, bootstrap |
 | `tests/Klaxon.Core.Tests` | `net8.0` | xUnit, with `FakeClock` in place of the real clock |
 
-The design and project decisions are in **[docs/PLANO.md](docs/PLANO.md)**.
-
 ## Data
 
 Everything in `%APPDATA%\Klaxon`:
