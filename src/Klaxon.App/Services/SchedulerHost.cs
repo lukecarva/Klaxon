@@ -68,8 +68,8 @@ public sealed class SchedulerHost(
         _hooked = true;
 
         _log.LogInformation(
-            "Agendador no ar. Próximo disparo: {Proximo}",
-            _scheduler.NextFireTime?.ToString("dd/MM HH:mm:ss") ?? "nenhum");
+            "Scheduler is up. Next fire: {Next}",
+            _scheduler.NextFireTime?.ToString("dd/MM HH:mm:ss") ?? "none");
 
         return Task.CompletedTask;
     }
@@ -104,7 +104,7 @@ public sealed class SchedulerHost(
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            _log.LogError(ex, "Não deu para salvar o estado do agendador.");
+            _log.LogError(ex, "Could not save the scheduler state.");
         }
     }
 
@@ -134,7 +134,7 @@ public sealed class SchedulerHost(
             return;
         }
 
-        _log.LogInformation("PC acordou. Avaliando o que venceu enquanto dormia.");
+        _log.LogInformation("PC resumed. Evaluating what came due while asleep.");
 
         Application.Current.Dispatcher.BeginInvoke(() => _scheduler.Tick());
     }
@@ -142,7 +142,7 @@ public sealed class SchedulerHost(
     /// <summary>On a clock/zone change, reloads instead of firing a burst.</summary>
     private void OnTimeChanged(object? sender, EventArgs e)
     {
-        _log.LogWarning("Relógio ou fuso do sistema mudou. Recalculando a agenda.");
+        _log.LogWarning("System clock or time zone changed. Recomputing the schedule.");
 
         Application.Current.Dispatcher.BeginInvoke(() => _scheduler.Reload(_alarms.Items));
     }

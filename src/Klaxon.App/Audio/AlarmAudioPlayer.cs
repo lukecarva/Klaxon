@@ -48,7 +48,7 @@ public sealed class AlarmAudioPlayer(ILogger log) : IDisposable
         catch (Exception ex)
         {
             // Keep the visual alert even if audio fails.
-            _log.LogError(ex, "Falha ao tocar o som do alerta. Seguindo em silêncio.");
+            _log.LogError(ex, "Failed to play the alert sound. Continuing silently.");
             Stop();
         }
     }
@@ -64,7 +64,7 @@ public sealed class AlarmAudioPlayer(ILogger log) : IDisposable
 
         if (spec.FilePath is { Length: > 0 } missing)
         {
-            _log.LogWarning("Som {Caminho} não encontrado. Usando o toque padrão.", missing);
+            _log.LogWarning("Sound {Path} not found. Using the default tone.", missing);
         }
 
         var loop = spec.Loop || spec.RepeatEvery > TimeSpan.Zero;

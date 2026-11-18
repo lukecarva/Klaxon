@@ -34,7 +34,7 @@ public sealed class WpfAlertPresenter(
         if (ShouldSkipForAbsence(trigger, out var idleFor))
         {
             _log.LogInformation(
-                "Alarme {Titulo} pulado: teclado e mouse parados há {Ocioso}.",
+                "Alarm {Title} skipped: keyboard and mouse idle for {Idle}.",
                 trigger.Alarm.Title,
                 idleFor);
 
@@ -47,7 +47,7 @@ public sealed class WpfAlertPresenter(
         if (resolved is null)
         {
             _log.LogInformation(
-                "Alarme {Titulo} perdido e descartado conforme o nível {Nivel}.",
+                "Alarm {Title} missed and discarded per the {Level} level.",
                 trigger.Alarm.Title,
                 trigger.EffectiveUrgency);
 
@@ -60,17 +60,17 @@ public sealed class WpfAlertPresenter(
         {
             if (trigger.Kind != TriggerKind.Escalation)
             {
-                _log.LogDebug("Alerta de {Titulo} já está na tela.", trigger.Alarm.Title);
+                _log.LogDebug("Alert for {Title} is already on screen.", trigger.Alarm.Title);
                 return;
             }
 
             // Escalation replaces the current window with a more intrusive one.
-            _log.LogInformation("Alerta de {Titulo} substituído pela versão escalada.", trigger.Alarm.Title);
+            _log.LogInformation("Alert for {Title} replaced by the escalated version.", trigger.Alarm.Title);
             existing.Window.Close();
         }
 
         _log.LogInformation(
-            "Alerta: {Titulo} [{Nivel}/{Modo}] motivo={Motivo}.",
+            "Alert: {Title} [{Level}/{Mode}] reason={Reason}.",
             trigger.Alarm.Title,
             trigger.EffectiveUrgency,
             mode.ToString(),

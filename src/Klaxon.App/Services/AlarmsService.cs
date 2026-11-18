@@ -22,7 +22,7 @@ public sealed class AlarmsService(IAlarmStore store, ILogger<AlarmsService> log)
     public void Load()
     {
         _items = [.. _store.Load()];
-        _log.LogInformation("{Quantidade} alarme(s) carregados.", _items.Count);
+        _log.LogInformation("{Count} alarm(s) loaded.", _items.Count);
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -37,12 +37,12 @@ public sealed class AlarmsService(IAlarmStore store, ILogger<AlarmsService> log)
         if (index >= 0)
         {
             _items[index] = alarm;
-            _log.LogInformation("Alarme {Titulo} atualizado.", alarm.Title);
+            _log.LogInformation("Alarm {Title} updated.", alarm.Title);
         }
         else
         {
             _items.Add(alarm);
-            _log.LogInformation("Alarme {Titulo} criado ({Agenda}).", alarm.Title, alarm.Schedule.Describe());
+            _log.LogInformation("Alarm {Title} created ({Schedule}).", alarm.Title, alarm.Schedule.Describe());
         }
 
         Persist();
@@ -58,7 +58,7 @@ public sealed class AlarmsService(IAlarmStore store, ILogger<AlarmsService> log)
         }
 
         _items.RemoveAll(a => a.Id == id);
-        _log.LogInformation("Alarme {Titulo} removido.", alarm.Title);
+        _log.LogInformation("Alarm {Title} removed.", alarm.Title);
         Persist();
     }
 

@@ -91,7 +91,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NewAlarm()
     {
-        _log.LogDebug("Abrindo o editor para um alarme novo.");
+        _log.LogDebug("Opening the editor for a new alarm.");
 
         var created = _dialogs.Edit(null);
         if (created is not null)
@@ -170,12 +170,12 @@ public sealed partial class MainViewModel : ObservableObject
         if (active)
         {
             _alarms.AddOrUpdate(HabitCatalog.BuildAlarm(def, minutes, _clock.Now, existing));
-            _log.LogInformation("Hábito {Habito} ativado (a cada {Min} min).", def.Key, minutes);
+            _log.LogInformation("Habit {Habit} enabled (every {Min} min).", def.Key, minutes);
         }
         else if (existing is not null)
         {
             _alarms.Remove(existing.Id);
-            _log.LogInformation("Hábito {Habito} desativado.", def.Key);
+            _log.LogInformation("Habit {Habit} disabled.", def.Key);
         }
     }
 

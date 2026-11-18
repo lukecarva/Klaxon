@@ -49,7 +49,7 @@ public sealed class JsonSchedulerStateStore : ISchedulerStateStore
 
             _log.LogError(
                 ex,
-                "scheduler-state.json ilegível. Movendo para {Quarentena} e começando vazio.",
+                "scheduler-state.json is unreadable. Moving it to {Quarantine} and starting empty.",
                 quarantine);
 
             try
@@ -58,7 +58,7 @@ public sealed class JsonSchedulerStateStore : ISchedulerStateStore
             }
             catch (IOException moveEx)
             {
-                _log.LogError(moveEx, "Não deu para mover o arquivo de estado corrompido.");
+                _log.LogError(moveEx, "Could not move the corrupt state file.");
             }
 
             return new SchedulerState();
@@ -89,7 +89,7 @@ public sealed class JsonSchedulerStateStore : ISchedulerStateStore
         }
 
         _log.LogDebug(
-            "Estado do agendador salvo: {Adiamentos} adiamento(s), {Escaladas} escalada(s).",
+            "Scheduler state saved: {Snoozes} snooze(s), {Escalations} escalation(s).",
             state.Snoozes.Count,
             state.Escalations.Count);
     }

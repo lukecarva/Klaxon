@@ -28,7 +28,7 @@ public sealed class StartupRegistrar(ILogger<StartupRegistrar> log)
         using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
         if (key is null)
         {
-            _log.LogError("Chave Run do usuário indisponível.");
+            _log.LogError("The user's Run key is unavailable.");
             return;
         }
 
@@ -37,18 +37,18 @@ public sealed class StartupRegistrar(ILogger<StartupRegistrar> log)
             var path = ExecutablePath();
             if (path is null)
             {
-                _log.LogError("Não deu para descobrir o caminho do executável.");
+                _log.LogError("Could not determine the executable path.");
                 return;
             }
 
             // --minimized: start straight to the tray.
             key.SetValue(ValueName, $"\"{path}\" --minimized");
-            _log.LogInformation("Início automático ligado.");
+            _log.LogInformation("Startup enabled.");
         }
         else
         {
             key.DeleteValue(ValueName, throwOnMissingValue: false);
-            _log.LogInformation("Início automático desligado.");
+            _log.LogInformation("Startup disabled.");
         }
     }
 

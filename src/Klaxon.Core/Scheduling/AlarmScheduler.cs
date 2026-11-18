@@ -167,7 +167,7 @@ public sealed class AlarmScheduler : IAlarmScheduler
             if (now < _lastTick)
             {
                 _log.LogWarning(
-                    "Relógio andou para trás ({Anterior:o} -> {Agora:o}). Recalculando todas as ocorrências.",
+                    "Clock moved backwards ({Previous:o} -> {Now:o}). Recomputing all occurrences.",
                     _lastTick,
                     now);
 
@@ -250,7 +250,7 @@ public sealed class AlarmScheduler : IAlarmScheduler
                 if (raised != esc.Level)
                 {
                     _log.LogInformation(
-                        "Alarme {Titulo} subiu para {Nivel} por adiamento.",
+                        "Alarm {Title} escalated to {Level} after snoozing.",
                         alarm.Title,
                         raised);
                 }
@@ -260,7 +260,7 @@ public sealed class AlarmScheduler : IAlarmScheduler
         }
 
         _log.LogInformation(
-            "Alarme {Titulo} adiado por {Minutos} min ({Usados}/{Max}).",
+            "Alarm {Title} snoozed for {Minutes} min ({Used}/{Max}).",
             alarm.Title,
             delay.TotalMinutes,
             used + 1,
@@ -440,7 +440,7 @@ public sealed class AlarmScheduler : IAlarmScheduler
 
                 if (occurrences > 100_000)
                 {
-                    _log.LogError("Agenda de {Titulo} não avança. Desagendando.", alarm.Title);
+                    _log.LogError("Schedule for {Title} does not advance. Unscheduling.", alarm.Title);
                     cursor = null;
                 }
             }
@@ -531,7 +531,7 @@ public sealed class AlarmScheduler : IAlarmScheduler
                 ? now + d
                 : null;
 
-            _log.LogInformation("Alarme {Titulo} subiu para {Nivel} por ficar ignorado.", alarm.Title, raised);
+            _log.LogInformation("Alarm {Title} escalated to {Level} after being ignored.", alarm.Title, raised);
 
             fired.Add(new AlarmTriggeredEventArgs
             {

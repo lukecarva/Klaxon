@@ -58,7 +58,7 @@ public sealed class JsonAlarmStore : IAlarmStore
 
             _log.LogError(
                 ex,
-                "alarms.json ilegível. Movendo para {Quarentena} e começando vazio.",
+                "alarms.json is unreadable. Moving it to {Quarantine} and starting empty.",
                 quarantine);
 
             try
@@ -67,7 +67,7 @@ public sealed class JsonAlarmStore : IAlarmStore
             }
             catch (IOException moveEx)
             {
-                _log.LogError(moveEx, "Não deu para mover o arquivo corrompido.");
+                _log.LogError(moveEx, "Could not move the corrupt file.");
             }
 
             return [];
@@ -98,6 +98,6 @@ public sealed class JsonAlarmStore : IAlarmStore
             File.Move(temp, _path);
         }
 
-        _log.LogDebug("{Quantidade} alarme(s) salvos em {Caminho}.", list.Count, _path);
+        _log.LogDebug("{Count} alarm(s) saved to {Path}.", list.Count, _path);
     }
 }
