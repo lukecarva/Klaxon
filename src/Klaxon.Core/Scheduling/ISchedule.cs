@@ -37,7 +37,7 @@ public static class WeekDaysExtensions
 [JsonDerivedType(typeof(IntervalSchedule), "interval")]
 public interface ISchedule
 {
-    /// <summary>Next occurrence strictly after <paramref name="from"/>, or null if none.</param>
+    /// <summary>Next occurrence strictly after <paramref name="from"/>, or null if none.</summary>
     DateTimeOffset? NextOccurrenceAfter(DateTimeOffset from, TimeZoneInfo zone);
 
     /// <summary>Short text for the alarm list, e.g. "Every day, 07:00".</summary>

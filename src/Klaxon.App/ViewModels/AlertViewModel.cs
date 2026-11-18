@@ -28,7 +28,7 @@ public sealed partial class AlertViewModel : ObservableObject, IDisposable
         var perfil = trigger.EffectiveProfile;
 
         SnoozeOptions = [.. perfil.Snooze.Options.Select(d => new SnoozeOption(d, $"{d.TotalMinutes:0} min"))];
-        DismissPhrase = perfil.DismissPhrase;
+        DismissPhrase = perfil.DismissPhrase ?? Loc.Get("Dismiss_DefaultPhrase");
         DismissMode = perfil.Dismiss;
         UrgencyName = Loc.UrgencyName(perfil.Level);
 

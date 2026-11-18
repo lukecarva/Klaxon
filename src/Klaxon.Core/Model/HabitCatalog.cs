@@ -3,7 +3,7 @@ using Klaxon.Core.Scheduling;
 
 namespace Klaxon.Core.Model;
 
-/// <summary>A one-click daily reminder preset.</param>
+/// <summary>A one-click daily reminder preset.</summary>
 public sealed record HabitDefinition(string Key, string Emoji, int DefaultMinutes, UrgencyLevel Urgency)
 {
     /// <summary>Display name in the current language.</summary>

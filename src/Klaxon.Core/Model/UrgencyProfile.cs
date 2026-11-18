@@ -133,8 +133,8 @@ public sealed record UrgencyProfile
     /// <summary>What happens when fired while away.</summary>
     public required MissedAlarmBehavior WhenAway { get; init; }
 
-    /// <summary>Phrase required for <see cref="DismissMode.TypePhrase"/>.</summary>
-    public string DismissPhrase { get; init; } = "acordei";
+    /// <summary>Phrase required for <see cref="DismissMode.TypePhrase"/>. Null = the localized default.</summary>
+    public string? DismissPhrase { get; init; }
 }
 
 /// <summary>The four level presets.</summary>

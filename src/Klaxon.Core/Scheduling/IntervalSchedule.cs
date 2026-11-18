@@ -1,6 +1,6 @@
 namespace Klaxon.Core.Scheduling;
 
-/// <summary>Fires every N minutes, optionally only within a daily time range.</param>
+/// <summary>Fires every N minutes, optionally only within a daily time range.</summary>
 public sealed record IntervalSchedule(
     TimeSpan Every,
     DateTimeOffset Anchor,
