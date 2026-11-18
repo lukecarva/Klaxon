@@ -4,106 +4,104 @@
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Klaxon é um despertador de bandeja para Windows, pensado para quem passa o dia no
-PC. A ideia central são os **níveis de urgência**: cada alarme define o quão
-intrusivo é o
-alerta — de um toast silencioso a um overlay em tela cheia que só sai com uma
-ação deliberada. Alarmes ignorados **sobem de nível** sozinhos, e lembretes
-cíclicos ("beba água a cada 45 min") não atrapalham quando você não está na
-frente do computador.
+Klaxon is a Windows tray alarm clock for people who spend the day at the PC. The
+core idea is **urgency levels**: each alarm sets how intrusive its alert is — from
+a silent toast to a full-screen overlay that only leaves with a deliberate action.
+Ignored alarms **escalate** on their own, and cyclic reminders ("drink water every
+45 min") stay out of the way when you're not at the computer.
 
-![Janela principal](docs/screenshots/janela-principal.png)
+![Main window](docs/screenshots/janela-principal.png)
 
-## Recursos
+## Features
 
-- **Quatro níveis de urgência** — do toast discreto ao overlay em tela cheia.
-- **Escalonamento automático** — ignorou por 10 min ou adiou 2 vezes? O alarme
-  volta um nível acima, até Crítico. É o "mata-ignorância".
-- **Agendas flexíveis** — uma vez, todo dia, dias da semana, ou a cada N minutos
-  (com faixa de horário opcional, que pode atravessar a meia-noite).
-- **Aba "Dia a dia"** — lembretes de saúde num clique (água, levantar, olhos,
-  alongar), quietos à noite e pulados quando você está ausente: não empilha
-  avisos numa cadeira vazia.
-- **Resistente a hibernação** — compara o relógio de parede a cada segundo, faz
-  *catch-up* de alarmes perdidos e reage a mudanças de fuso e de relógio.
-- **Adiamento por nível** — do ilimitado ao "uma vez só", conforme a urgência.
-- **Som com fade** — toque sintetizado embutido, ou um arquivo seu.
-- **Fica na bandeja** — fechar a janela esconde; sair é pelo menu do ícone.
-- **Início com o Windows** — opcional, via `HKCU` (sem admin).
-- **Bilíngue (PT-BR / English)** — o idioma é escolhido na instalação e o app
-  abre nele.
+- **Four urgency levels** — from a discreet toast to a full-screen overlay.
+- **Automatic escalation** — ignored for 10 min or snoozed twice? The alarm comes
+  back one level higher, up to Critical. The "ignorance killer".
+- **Flexible schedules** — once, every day, days of the week, or every N minutes
+  (with an optional time range that can cross midnight).
+- **"Daily" tab** — one-click health reminders (water, stand up, eyes, stretch),
+  quiet at night and skipped while you're away: no piling up alerts on an empty
+  chair.
+- **Sleep-resistant** — compares the wall clock every second, *catches up* on
+  missed alarms and reacts to time-zone and clock changes.
+- **Per-level snooze** — from unlimited to "once only", depending on urgency.
+- **Sound with fade** — a built-in synthesized tone, or a file of your own.
+- **Lives in the tray** — closing the window hides it; quitting is via the icon
+  menu.
+- **Start with Windows** — optional, via `HKCU` (no admin).
+- **Bilingual (PT-BR / English)** — the language is chosen at install time and the
+  app opens in it.
 
-### Níveis de urgência
+### Urgency levels
 
-| Nível | Como aparece | Como sai |
+| Level | How it appears | How it leaves |
 |---|---|---|
-| 🔵 Sussurro | Toast do Windows, sem som | Sozinho, em 7s |
-| 🟢 Normal | Card no canto, um toque | Um clique. Adia 5/10/15 min à vontade |
-| 🟠 Importante | Janela central, toque a cada 10s | Um clique. Adia 5 min, até 3x |
-| 🔴 Crítico | Tela cheia em todos os monitores, som em loop | Segurar o botão 3s. Adia 2 min, uma vez só |
+| 🔵 Whisper | Windows toast, no sound | On its own, in 7s |
+| 🟢 Normal | Corner card, one beep | One click. Snooze 5/10/15 min freely |
+| 🟠 Important | Centered window, beep every 10s | One click. Snooze 5 min, up to 3x |
+| 🔴 Critical | Full screen on every monitor, looping sound | Hold the button 3s. Snooze 2 min, once only |
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/editor.png" alt="Editor de alarme" /></td>
-    <td><img src="docs/screenshots/alerta-escalado.png" alt="Alerta escalado" /></td>
+    <td><img src="docs/screenshots/editor.png" alt="Alarm editor" /></td>
+    <td><img src="docs/screenshots/alerta-escalado.png" alt="Escalated alert" /></td>
   </tr>
   <tr>
-    <td align="center"><sub>Editor — agenda cíclica, presença e insistência</sub></td>
-    <td align="center"><sub>Alerta que subiu de nível por ter sido ignorado</sub></td>
+    <td align="center"><sub>Editor — schedule, presence and insistence</sub></td>
+    <td align="center"><sub>An alert that escalated after being ignored</sub></td>
   </tr>
 </table>
 
-## Instalando
+## Installing
 
-Baixe o `Klaxon-Setup-<versão>.exe` (ou gere-o abaixo) e execute.
-A instalação é **por usuário, sem admin**: cai em
-`%LOCALAPPDATA%\Programs\Klaxon`, cria atalho no Menu Iniciar e
-oferece "iniciar com o Windows" e atalho na área de trabalho como opcionais.
-Desinstalar preserva seus dados em `%APPDATA%\Klaxon`.
+Download `Klaxon-Setup-<version>.exe` (or build it below) and run it. The install
+is **per-user, no admin**: it lands in `%LOCALAPPDATA%\Programs\Klaxon`, creates a
+Start Menu shortcut and offers "start with Windows" and a desktop shortcut as
+options. Uninstalling preserves your data in `%APPDATA%\Klaxon`.
 
-O assistente começa perguntando o **idioma** (Português ou English) e grava a
-escolha, então o app já abre no idioma certo.
+The wizard starts by asking for the **language** (Português or English) and saves
+the choice, so the app opens in the right language.
 
-O app é *framework-dependent*: exige o **.NET 8 Desktop Runtime (x64)** — o
-instalador detecta a ausência dele e mostra o link antes de seguir.
+The app is *framework-dependent*: it requires the **.NET 8 Desktop Runtime (x64)**
+— the installer detects its absence and shows the link before continuing.
 
 ```powershell
 winget install Microsoft.DotNet.DesktopRuntime.8
 ```
 
-### Gerando o instalador
+### Building the installer
 
 ```powershell
 pwsh build/build-installer.ps1
 ```
 
-Sai em `build/dist/`. Requer o [Inno Setup 6](https://jrsoftware.org/isinfo.php)
-uma vez (`winget install JRSoftware.InnoSetup`).
+Output lands in `build/dist/`. Requires [Inno Setup 6](https://jrsoftware.org/isinfo.php)
+once (`winget install JRSoftware.InnoSetup`).
 
-## Desenvolvimento
+## Development
 
 ```bash
-dotnet run --project src/Klaxon.App   # rodar
-dotnet test                               # testes (agendador, DST, catch-up…)
+dotnet run --project src/Klaxon.App   # run
+dotnet test                           # tests (scheduler, DST, catch-up…)
 ```
 
-| Projeto | TFM | Papel |
+| Project | TFM | Role |
 |---|---|---|
-| `src/Klaxon.Core` | `net8.0` | Domínio e agendamento. Não conhece WPF — roda nos testes sem UI |
-| `src/Klaxon.App` | `net8.0-windows` | WPF: bandeja, janelas, áudio, bootstrap |
-| `tests/Klaxon.Core.Tests` | `net8.0` | xUnit, com `FakeClock` no lugar do relógio real |
+| `src/Klaxon.Core` | `net8.0` | Domain and scheduling. Knows nothing about WPF — runs in tests with no UI |
+| `src/Klaxon.App` | `net8.0-windows` | WPF: tray, windows, audio, bootstrap |
+| `tests/Klaxon.Core.Tests` | `net8.0` | xUnit, with `FakeClock` in place of the real clock |
 
-O desenho e as decisões de projeto estão em **[docs/PLANO.md](docs/PLANO.md)**.
+The design and project decisions are in **[docs/PLANO.md](docs/PLANO.md)**.
 
-## Dados
+## Data
 
-Tudo em `%APPDATA%\Klaxon`:
+Everything in `%APPDATA%\Klaxon`:
 
-- `alarms.json` — seus alarmes, em JSON legível e editável à mão (escrita
-  atômica; um arquivo corrompido vai para quarentena em vez de ser sobrescrito).
-- `logs\log-*.txt` — 7 dias, UTF-8 com BOM, aberto em modo compartilhado (dá para
-  ler com o app rodando).
+- `alarms.json` — your alarms, in readable, hand-editable JSON (atomic writes; a
+  corrupt file is quarantined instead of being overwritten).
+- `logs\log-*.txt` — 7 days, UTF-8 with BOM, opened in shared mode (readable while
+  the app runs).
 
-## Licença
+## License
 
 [MIT](LICENSE).
