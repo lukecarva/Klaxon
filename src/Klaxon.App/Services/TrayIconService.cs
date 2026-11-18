@@ -32,7 +32,7 @@ public sealed class TrayIconService(IServiceProvider services, ILogger<TrayIconS
         var exit = new MenuItem { Header = Loc.Get("Tray_Exit") };
         exit.Click += (_, _) =>
         {
-            _log.LogInformation("Encerramento solicitado pelo menu da bandeja.");
+            _log.LogInformation("Shutdown requested from the tray menu.");
             Application.Current.Shutdown();
         };
 
@@ -51,7 +51,7 @@ public sealed class TrayIconService(IServiceProvider services, ILogger<TrayIconS
         // enablesEfficiencyMode: false keeps Windows from throttling the timers.
         _icon.ForceCreate(enablesEfficiencyMode: false);
 
-        _log.LogInformation("Ícone da bandeja criado.");
+        _log.LogInformation("Tray icon created.");
     }
 
     /// <summary>Shows a native Windows toast (the Whisper-level alert).</summary>
@@ -70,7 +70,7 @@ public sealed class TrayIconService(IServiceProvider services, ILogger<TrayIconS
     }
 
     /// <summary>Shows and activates the main window.</summary>
-    private void ShowMainWindow()
+    public void ShowMainWindow()
     {
         var window = _services.GetRequiredService<MainWindowView>();
 

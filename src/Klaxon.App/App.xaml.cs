@@ -23,7 +23,12 @@ public partial class App : Application
     // Per-user scope for the single-instance mutex.
     private const string SingleInstanceMutexName = @"Local\Klaxon.SingleInstance";
 
+    // A later instance sets this event to ask the running one to surface its window.
+    private const string SingleInstanceEventName = @"Local\Klaxon.Activate";
+
     private Mutex? _singleInstanceMutex;
+    private EventWaitHandle? _activateSignal;
+    private RegisteredWaitHandle? _activateRegistration;
     private IHost? _host;
 
     /// <summary>True during an intentional shutdown, so the window really closes.</summary>
@@ -37,19 +42,23 @@ public partial class App : Application
         _singleInstanceMutex = new Mutex(initiallyOwned: true, SingleInstanceMutexName, out var isFirstInstance);
         if (!isFirstInstance)
         {
-            // A second instance just exits.
+            // A second instance asks the running one to surface its window, then exits.
+            SignalRunningInstance();
             _singleInstanceMutex.Dispose();
             _singleInstanceMutex = null;
             Shutdown();
             return;
         }
 
+        // Owned by the first instance; a later one sets it to surface this window.
+        _activateSignal = new EventWaitHandle(initialState: false, EventResetMode.AutoReset, SingleInstanceEventName);
+
         AppPaths.EnsureCreated();
         ConfigureLogging();
         HookGlobalExceptionHandlers();
         ResolveLanguage();
 
-        Log.Information("Klaxon iniciando ({Idioma}). Dados em {Root}", Loc.Code, AppPaths.Root);
+        Log.Information("Klaxon starting ({Language}). Data at {Root}", Loc.Code, AppPaths.Root);
 
         _host = Host.CreateDefaultBuilder(e.Args)
             .UseSerilog()
@@ -95,13 +104,35 @@ public partial class App : Application
         {
             window.Show();
         }
+
+        // Now that services exist, surface the window whenever a second instance signals.
+        _activateRegistration = ThreadPool.RegisterWaitForSingleObject(
+            _activateSignal,
+            (_, _) => Dispatcher.BeginInvoke(ActivateRunningInstance),
+            state: null,
+            millisecondsTimeOutInterval: Timeout.Infinite,
+            executeOnlyOnce: false);
     }
+
+    /// <summary>Signals the already-running instance to surface its window.</summary>
+    private static void SignalRunningInstance()
+    {
+        if (EventWaitHandle.TryOpenExisting(SingleInstanceEventName, out var signal))
+        {
+            signal.Set();
+            signal.Dispose();
+        }
+    }
+
+    /// <summary>Brings the main window to the front, triggered by a second instance.</summary>
+    private void ActivateRunningInstance() =>
+        _host?.Services.GetRequiredService<TrayIconService>().ShowMainWindow();
 
     /// <summary>Tears down the host and releases the single-instance mutex.</summary>
     protected override void OnExit(ExitEventArgs e)
     {
         IsShuttingDown = true;
-        Log.Information("Encerrando (código {Code}).", e.ApplicationExitCode);
+        Log.Information("Shutting down (code {Code}).", e.ApplicationExitCode);
 
         if (_host is not null)
         {
@@ -111,6 +142,9 @@ public partial class App : Application
         }
 
         Log.CloseAndFlush();
+
+        _activateRegistration?.Unregister(waitObject: null);
+        _activateSignal?.Dispose();
 
         _singleInstanceMutex?.ReleaseMutex();
         _singleInstanceMutex?.Dispose();
@@ -159,11 +193,11 @@ public partial class App : Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
-            Log.Fatal(args.ExceptionObject as Exception, "Exceção não tratada no AppDomain. Encerrando: {Terminating}", args.IsTerminating);
+            Log.Fatal(args.ExceptionObject as Exception, "Unhandled exception in the AppDomain. Terminating: {Terminating}", args.IsTerminating);
 
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
-            Log.Error(args.Exception, "Exceção não observada em Task.");
+            Log.Error(args.Exception, "Unobserved task exception.");
             args.SetObserved();
         };
     }
@@ -171,7 +205,7 @@ public partial class App : Application
     /// <summary>Logs a UI exception, keeps the app running, and warns the user.</summary>
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        Log.Error(e.Exception, "Exceção não tratada na UI.");
+        Log.Error(e.Exception, "Unhandled UI exception.");
 
         // Keep the process alive: a UI failure must not take down the scheduler.
         e.Handled = true;

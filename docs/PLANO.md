@@ -145,7 +145,7 @@ e a decisão para cada uma:
 | **Horário de verão** | Alarme diário das 7h "anda" 1h ou dispara duas vezes | Recorrentes guardam **hora local de parede** (`TimeOnly` + regra), nunca UTC. One-time guarda `DateTimeOffset` absoluto |
 | **Focus Assist / Não Perturbe** | O Windows engole os toasts silenciosamente | Só o nível `Whisper` usa toast nativo. Do `Normal` para cima é janela própria, que o Focus Assist não toca |
 | **`SetForegroundWindow` bloqueado** | O Windows recusa roubo de foco vindo de app em background; a janela só pisca na barra | `Topmost = true` + `Activate()` + `Show()`, sem brigar com a API. Para o caso Crítico, o fullscreen resolve |
-| **Duas instâncias abertas** | Alarme dispara duplicado e o arquivo corrompe | `Mutex` nomeado no boot; a 2ª instância manda "abre a janela" via named pipe e encerra |
+| **Duas instâncias abertas** | Alarme dispara duplicado e o arquivo corrompe | `Mutex` nomeado no boot; a 2ª instância sinaliza a 1ª (via `EventWaitHandle` nomeado) para trazer a janela à frente e encerra |
 | **Crash na hora de salvar** | `alarms.json` truncado = todos os alarmes perdidos | Escrita atômica: grava `.tmp` → `File.Replace` com backup |
 
 **Interface:**
